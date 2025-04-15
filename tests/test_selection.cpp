@@ -1,19 +1,22 @@
+#define _USE_MATH_DEFINES
 #include "testcommon.h"
 #include <math.h>
 
 SelectionTests::SelectionTests() {}
 
-void SelectionTests::test_roulette_select() {
+void SelectionTests::test_roulette_select()
+{
     int popSize = 100;
     int numSelect = 100000;
     vector<float> fitnessValues(popSize);
     vector<float> indexA(numSelect),
-                  indexB(numSelect),
-                  fitnessValuesSelectedA(numSelect),
-                  fitnessValuesSelectedB(numSelect);
+        indexB(numSelect),
+        fitnessValuesSelectedA(numSelect),
+        fitnessValuesSelectedB(numSelect);
 
-    for(int i=0; i<popSize; i++) {
-        float time = (float)i / ((float)popSize-1);
+    for (int i = 0; i < popSize; i++)
+    {
+        float time = (float)i / ((float)popSize - 1);
         fitnessValues[i] = sin(time * M_PI);
     }
 
@@ -21,7 +24,8 @@ void SelectionTests::test_roulette_select() {
 
     RouletteWheelSelection selector = RouletteWheelSelection(popSize);
 
-    for(int i=0; i<numSelect; i++) {
+    for (int i = 0; i < numSelect; i++)
+    {
         int A, B;
         selector.select(fitnessValues, A, B);
         fitnessValuesSelectedA[i] = fitnessValues[A];
@@ -34,25 +38,26 @@ void SelectionTests::test_roulette_select() {
     printDistribution(fitnessValuesSelectedB, 10, 100);
 }
 
-
-
-void SelectionTests::test_tournament_select() {
+void SelectionTests::test_tournament_select()
+{
     int popSize = 100;
     int numSelect = 10000;
     vector<float> fitnessValues(popSize);
     vector<float> indexA(numSelect),
-                  indexB(numSelect),
-                  fitnessValuesSelectedA(numSelect),
-                  fitnessValuesSelectedB(numSelect);
+        indexB(numSelect),
+        fitnessValuesSelectedA(numSelect),
+        fitnessValuesSelectedB(numSelect);
 
-    for(int i=0; i<popSize; i++) {
-        float time = (float)i / ((float)popSize-1);
+    for (int i = 0; i < popSize; i++)
+    {
+        float time = (float)i / ((float)popSize - 1);
         fitnessValues[i] = sin(time * M_PI);
     }
 
     TournamentSelection selector = TournamentSelection(popSize);
 
-    for(int i=0; i<numSelect; i++) {
+    for (int i = 0; i < numSelect; i++)
+    {
         int A, B;
         selector.select(fitnessValues, A, B);
         fitnessValuesSelectedA[i] = fitnessValues[A];

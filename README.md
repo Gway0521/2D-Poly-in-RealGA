@@ -7,16 +7,17 @@
 ## Project Structure
 
 - `RealGA/`: [RealGA](https://github.com/alenic/realGA)
-- `2D-Poly/`: 我們的 code
-  - `testRealGA.cpp`: 測試 RealGA 能不能順利跑
-  - `triangulation.cpp`: Delaunay Triangulation 實作和測試
-  - `testData/`
+- `2D-Poly/`
+  - `include/`: header files
+  - `src/`: source code
+  - `tests/`: unit test
+  - `dataset/`
     - `01.jpg`: 企鵝圖片
     - `01.txt`: `01.jpg` 的座標輸入
 
-## Build - Windows
+## Getting Started - Windows
 
-1. **Git clone**
+1. **Clone the repository**
 
    ```
    git clone https://github.com/Gway0521/2D-Poly-in-RealGA.git
@@ -41,4 +42,12 @@
    cmake ..
    MSBuild.exe .\2D-Poly.sln /p:Configuration=Release
    (或者 cmake --build . --config Release 也可以)
+   ```
+
+4. **Run the example**
+
+   ```
+   cd release
+   realga_test
+   triangulation_test
    ```

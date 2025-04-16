@@ -1,13 +1,10 @@
 #ifndef ___TRIANGULATION_H
 #define ___TRIANGULATION_H
 
-#include <iostream>
-#include <fstream>
+#include <opencv2/opencv.hpp>
+
 #include <string>
 #include <vector>
-#include <cmath>
-#include <algorithm>
-#include <opencv2/opencv.hpp>
 
 struct Triangle
 {
@@ -19,9 +16,9 @@ struct Edge
     int a, b;
 };
 
-bool operator==(const Edge& e1, const Edge& e2);
+bool operator==(const Edge &e1, const Edge &e2);
 
-double orientation(const cv::Point& a, const cv::Point& b, const cv::Point& c);
+double orientation(const cv::Point &a, const cv::Point &b, const cv::Point &c);
 
 class DTImage
 {
@@ -33,7 +30,7 @@ public:
 
     void drawLine();
     void drawColor(const cv::Mat &origImg);
-    
+
     int getNumTriangles() const;
     void printTriangles() const;
     void writeLineImg(const std::string filename) const;

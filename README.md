@@ -26,11 +26,11 @@
 2. **Build RealGA**
 
    ```
-   cd RealGA
+   cd 2D-Poly-in-RealGA/RealGA
    mkdir build
    cd build
    cmake ..
-   MSBuild.exe .\RealGA.sln /p:Configuration=Release
+   cmake --build . --config Release
    ```
 
 3. **Build 2D-Poly**
@@ -40,14 +40,13 @@
    mkdir build
    cd build
    cmake ..
-   MSBuild.exe .\2D-Poly.sln /p:Configuration=Release
-   (或者 cmake --build . --config Release 也可以)
+   cmake --build . --config Release
    ```
 
 4. **Run the example**
 
    ```
    cd release
-   realga_test
-   triangulation_test
+   ./realga_test
+   ./triangulation_test
    ```

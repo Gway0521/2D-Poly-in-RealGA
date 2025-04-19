@@ -3,12 +3,13 @@
 #include <opencv2/opencv.hpp>
 
 #include <fstream>
+#include <iostream>
 #include <vector>
 
-int main()
-{
+int main() {
     // 檔案路徑
     const std::string input_path = "../../dataset/01.txt";
+    const std::string image_path = "../../dataset/01.jpg";
 
     std::ifstream input_file(input_path);
     if (!input_file) {
@@ -17,8 +18,8 @@ int main()
     }
 
     // 前三個數字是 點的數量、影像寬度、影像高度
-    int n, w, h;
-    input_file >> n >> w >> h;
+    int n, width, height;
+    input_file >> n >> width >> height;
 
     // 後面 2n 個數字是 n 個座標點
     std::vector<cv::Point> points(n);
@@ -27,12 +28,32 @@ int main()
     input_file.close();
 
     // 執行 Delaunay 三角剖分
-    DTImage dtImg(w, h, points);
+    triangulation::TriangulationImageBuilder triangulation_image_builder(width, height, points);
 
-    dtImg.getNumTriangles();
-    dtImg.printTriangles();
-    dtImg.drawLine();
-    dtImg.writeLineImg("LineImg01.jpg");
+    std::cout << "Number of points: " << triangulation_image_builder.points().size() << std::endl;
+    std::cout << "Image width: " << triangulation_image_builder.width() << ", height: " << triangulation_image_builder.height() << std::endl;
+    std::cout << "Number of triangles: " << triangulation_image_builder.triangles().size() << std::endl;
+
+    triangulation_image_builder.DrawLineImage();
+    triangulation_image_builder.WriteLineImage("LineImage01.jpg");
+    cv::imshow("LineImage01", triangulation_image_builder.line_image());
+    cv::waitKey(0);
+
+
+    cv::Mat orig_img = cv::imread(image_path, cv::IMREAD_COLOR);
+
+    if (orig_img.empty()) {
+        std::cerr << "Failed to open input file: " << image_path << std::endl;
+        return -1;
+    }
+
+    // 上色
+    // triangulation_image_builder.DrawColoredImage(orig_img);
+    // triangulation_image_builder.WriteColoredImage("ColoredImage01.jpg");
+    // cv::imshow("ColoredImage01", triangulation_image_builder.colored_image());
+    // cv::waitKey(0);
+
+    // std::cout << "Fitness: " << triangulation_image_builder.ComputeFitness(orig_img) << std::endl;
 
     return 0;
 }

@@ -192,6 +192,7 @@ namespace triangulation
     void TriangulationImageBuilder::DrawColoredImage(const cv::Mat &orig_image, int mode)
     {
         colored_image_ = cv::Mat(height_, width_, CV_8UC3, cv::Scalar(255, 255, 255)); // 白底圖
+        cv::Mat mask(height_, width_, CV_8UC1, cv::Scalar(0));
 
         auto quantize555 = [](const cv::Vec3b &px) -> cv::Vec3b
         {
@@ -210,7 +211,7 @@ namespace triangulation
             std::vector<cv::Point> contour = {a, b, c};
 
             // 建立 mask，找出三角形內 pixel
-            cv::Mat mask(height_, width_, CV_8UC1, cv::Scalar(0));
+            mask.setTo(0);
             cv::fillConvexPoly(mask, contour, 255);
 
             std::vector<cv::Point> nz;

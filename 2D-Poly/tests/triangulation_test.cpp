@@ -9,7 +9,7 @@
 int main()
 {
     // 檔案路徑
-    const std::string input_path = "../../dataset/02.txt";
+    const std::string input_path = "../../dataset/03.txt";
     const std::string image_path = "../../dataset/01.jpg";
 
     std::ifstream input_file(input_path);

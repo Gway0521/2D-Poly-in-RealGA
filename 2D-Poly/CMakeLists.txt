@@ -1,3 +1,14 @@
+
+# 自動導入 vcpkg toolchain（避免用戶忘記）
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE AND EXISTS "C:/vcpkg/scripts/buildsystems/vcpkg.cmake")
+  set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+endif()
+
+# 自動指定 OpenCV_DIR
+if(NOT OpenCV_DIR)
+  set(OpenCV_DIR "C:/vcpkg/installed/x64-windows/share/opencv4" CACHE PATH "")
+endif()
+
 cmake_minimum_required(VERSION 3.10)
 project(2DPoly)
 

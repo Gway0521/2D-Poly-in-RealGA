@@ -6,13 +6,15 @@
 #include <iostream>
 #include <vector>
 
-int main() {
+int main()
+{
     // 檔案路徑
-    const std::string input_path = "../../dataset/01.txt";
+    const std::string input_path = "../../dataset/02.txt";
     const std::string image_path = "../../dataset/01.jpg";
 
     std::ifstream input_file(input_path);
-    if (!input_file) {
+    if (!input_file)
+    {
         std::cerr << "Failed to open input file: " << input_path << std::endl;
         return 1;
     }
@@ -27,6 +29,9 @@ int main() {
         input_file >> points[i].x >> points[i].y;
     input_file.close();
 
+    cv::Mat resized;
+    double scale = 0.5;
+
     // 執行 Delaunay 三角剖分
     triangulation::TriangulationImageBuilder triangulation_image_builder(width, height, points);
 
@@ -36,24 +41,27 @@ int main() {
 
     triangulation_image_builder.DrawLineImage();
     triangulation_image_builder.WriteLineImage("LineImage01.jpg");
-    cv::imshow("LineImage01", triangulation_image_builder.line_image());
+    cv::resize(triangulation_image_builder.line_image(), resized, cv::Size(), scale, scale);
+    cv::imshow("LineImage01", resized);
     cv::waitKey(0);
 
-
     cv::Mat orig_img = cv::imread(image_path, cv::IMREAD_COLOR);
+    std::cout << "orig_image size: " << orig_img.cols << " x " << orig_img.rows << std::endl;
 
-    if (orig_img.empty()) {
+    if (orig_img.empty())
+    {
         std::cerr << "Failed to open input file: " << image_path << std::endl;
         return -1;
     }
 
     // 上色
-    // triangulation_image_builder.DrawColoredImage(orig_img);
-    // triangulation_image_builder.WriteColoredImage("ColoredImage01.jpg");
-    // cv::imshow("ColoredImage01", triangulation_image_builder.colored_image());
-    // cv::waitKey(0);
+    triangulation_image_builder.DrawColoredImage(orig_img, 2);
+    triangulation_image_builder.WriteColoredImage("ColoredImage01.jpg");
+    cv::resize(triangulation_image_builder.colored_image(), resized, cv::Size(), scale, scale);
+    cv::imshow("ColoredImage01", resized);
+    cv::waitKey(0);
 
-    // std::cout << "Fitness: " << triangulation_image_builder.ComputeFitness(orig_img) << std::endl;
+    std::cout << "Fitness: " << triangulation_image_builder.ComputeFitness(orig_img) << std::endl;
 
     return 0;
 }

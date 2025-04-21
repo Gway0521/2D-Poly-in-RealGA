@@ -8,20 +8,24 @@
 #include <cmath>
 #include <algorithm>
 
-namespace triangulation {
+namespace triangulation
+{
 
-    bool Edge::operator==(const Edge& e) const {
+    bool Edge::operator==(const Edge &e) const
+    {
         return (a == e.a && b == e.b) || (a == e.b && b == e.a);
     }
 
-    // è¨ˆç®—ä¸‰å€‹é»çš„æœ‰å‘é¢ç©ï¼ˆæ­£å€¼è¡¨ç¤ºé€†æ™‚é‡æ’åˆ—
-    double ComputeDirectedArea(const cv::Point& a, const cv::Point& b, const cv::Point& c) {
+    // ­pºâ¤T­ÓÂIªº¦³¦V­±¿n¡]¥¿­Èªí¥Ü°f®É°w±Æ¦C
+    double ComputeDirectedArea(const cv::Point &a, const cv::Point &b, const cv::Point &c)
+    {
         return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
     }
 
-    // åˆ¤æ–·é» p æ˜¯å¦åœ¨ç”± (a, b, c) æ§‹æˆä¸‰è§’å½¢çš„å¤–æ¥åœ“å…§
-    // æ­¤å‡½å¼è¦æ±‚ a, b, c ç‚ºé€†æ™‚é‡æ’åˆ—ï¼Œå‰‡ determinant > 0 è¡¨ç¤º p è½åœ¨å¤–æ¥åœ“å…§
-    bool IsInCircumcircle(const cv::Point& p, const cv::Point& a, const cv::Point& b, const cv::Point& c) {
+    // §PÂ_ÂI p ¬O§_¦b¥Ñ (a, b, c) ºc¦¨¤T¨¤§Îªº¥~±µ¶ê¤º
+    // ¦¹¨ç¦¡­n¨D a, b, c ¬°°f®É°w±Æ¦C¡A«h determinant > 0 ªí¥Ü p ¸¨¦b¥~±µ¶ê¤º
+    bool IsInCircumcircle(const cv::Point &p, const cv::Point &a, const cv::Point &b, const cv::Point &c)
+    {
         double ax = a.x - p.x;
         double ay = a.y - p.y;
         double bx = b.x - p.x;
@@ -30,27 +34,30 @@ namespace triangulation {
         double cy = c.y - p.y;
 
         double det = (ax * ax + ay * ay) * (bx * cy - cx * by) -
-            (bx * bx + by * by) * (ax * cy - cx * ay) +
-            (cx * cx + cy * cy) * (ax * by - bx * ay);
+                     (bx * bx + by * by) * (ax * cy - cx * ay) +
+                     (cx * cx + cy * cy) * (ax * by - bx * ay);
         return det > 0;
     }
 
     TriangulationImageBuilder::TriangulationImageBuilder(int width, int height) : width_(width), height_(height) {};
-    TriangulationImageBuilder::TriangulationImageBuilder(int width, int height, const std::vector<cv::Point>& points) : width_(width), height_(height) {
+    TriangulationImageBuilder::TriangulationImageBuilder(int width, int height, const std::vector<cv::Point> &points) : width_(width), height_(height)
+    {
         RunDelaunay(points);
     };
 
-    // ä½¿ç”¨ Bowyerâ€“Watson æ¼”ç®—æ³•æ§‹é€  Delaunay ä¸‰è§’å‰–åˆ†
-    // å‚³å…¥çš„ points é™£åˆ—æœƒæš«æ™‚åŠ å…¥è¶…å¤§ä¸‰è§’å½¢çš„é ‚é»ï¼Œä¾›æ¼”ç®—æ³•ä½¿ç”¨ã€‚
-    // ç‚ºé¿å…åœ¨æœ€å¾Œè¼¸å‡ºçµæœæ™‚æ··æ·†ï¼Œæˆ‘å€‘ç´„å®šåŸå§‹é»æ•¸ç‚º original_nï¼Œè¶…å¤§ä¸‰è§’å½¢çš„é ‚é»ç´¢å¼•çš†å¤§æ–¼ç­‰æ–¼ original_nã€‚
-    void TriangulationImageBuilder::RunDelaunay(const std::vector<cv::Point>& points) {
+    // ¨Ï¥Î Bowyer¡VWatson ºtºâªkºc³y Delaunay ¤T¨¤­å¤À
+    // ¶Ç¤Jªº points °}¦C·|¼È®É¥[¤J¶W¤j¤T¨¤§Îªº³»ÂI¡A¨Ñºtºâªk¨Ï¥Î¡C
+    // ¬°Á×§K¦b³Ì«á¿é¥Xµ²ªG®É²V²c¡A§Ú­Ì¬ù©w­ì©lÂI¼Æ¬° original_n¡A¶W¤j¤T¨¤§Îªº³»ÂI¯Á¤Ş¬Ò¤j©óµ¥©ó original_n¡C
+    void TriangulationImageBuilder::RunDelaunay(const std::vector<cv::Point> &points)
+    {
         points_ = points;
         int original_n = points_.size();
 
-        // è¨ˆç®—é»é›†åˆçš„é‚Šç•Œ
+        // ­pºâÂI¶°¦XªºÃä¬É
         double min_x = points_[0].x, min_y = points_[0].y;
         double max_x = points_[0].x, max_y = points_[0].y;
-        for (const auto& p : points_) {
+        for (const auto &p : points_)
+        {
             if (p.x < min_x)
                 min_x = p.x;
             if (p.x > max_x)
@@ -65,12 +72,12 @@ namespace triangulation {
         double mid_x = (min_x + max_x) / 2.0;
         double mid_y = (min_y + max_y) / 2.0;
 
-        // å»ºç«‹ä¸€å€‹è¶³å¤ å¤§çš„è¶…å¤§ä¸‰è§’å½¢ï¼Œä¿è­‰æ‰€æœ‰è¼¸å…¥é»éƒ½åŒ…å«åœ¨å…§
-        cv::Point p1 = { int(mid_x - 2 * delta_max), int(mid_y - delta_max) };
-        cv::Point p2 = { int(mid_x), int(mid_y + 2 * delta_max) };
-        cv::Point p3 = { int(mid_x + 2 * delta_max), int(mid_y - delta_max) };
+        // «Ø¥ß¤@­Ó¨¬°÷¤jªº¶W¤j¤T¨¤§Î¡A«OÃÒ©Ò¦³¿é¤JÂI³£¥]§t¦b¤º
+        cv::Point p1 = {int(mid_x - 2 * delta_max), int(mid_y - delta_max)};
+        cv::Point p2 = {int(mid_x), int(mid_y + 2 * delta_max)};
+        cv::Point p3 = {int(mid_x + 2 * delta_max), int(mid_y - delta_max)};
 
-        // å°‡è¶…å¤§ä¸‰è§’å½¢çš„é ‚é»åŠ å…¥é»é›†åˆä¸­
+        // ±N¶W¤j¤T¨¤§Îªº³»ÂI¥[¤JÂI¶°¦X¤¤
         points_.push_back(p1);
         points_.push_back(p2);
         points_.push_back(p3);
@@ -78,49 +85,56 @@ namespace triangulation {
         int idx_p2 = points_.size() - 2;
         int idx_p3 = points_.size() - 1;
 
-        // åˆå§‹ä¸‰è§’å½¢å³ç‚ºè¶…å¤§ä¸‰è§’å½¢
-        triangles_.push_back({ idx_p1, idx_p2, idx_p3 });
+        // ªì©l¤T¨¤§Î§Y¬°¶W¤j¤T¨¤§Î
+        triangles_.push_back({idx_p1, idx_p2, idx_p3});
 
-        // å°‡æ¯å€‹åŸå§‹é»ä¾åºæ’å…¥
-        // æ³¨æ„ï¼šé€™é‚Šåªè¿­ä»£åŸå§‹é»ï¼ˆç´¢å¼• 0 ~ original_n-1ï¼‰
-        for (int i = 0; i < original_n; i++) {
+        // ±N¨C­Ó­ì©lÂI¨Ì§Ç´¡¤J
+        // ª`·N¡G³oÃä¥u­¡¥N­ì©lÂI¡]¯Á¤Ş 0 ~ original_n-1¡^
+        for (int i = 0; i < original_n; i++)
+        {
             cv::Point p = points_[i];
-            std::vector<Triangle> bad_triangles; // å„²å­˜å¤–æ¥åœ“åŒ…å« p çš„ä¸‰è§’å½¢
-            std::vector<Edge> polygon;          // å„²å­˜å¤šé‚Šå½¢é‚Šç•Œ
+            std::vector<Triangle> bad_triangles; // Àx¦s¥~±µ¶ê¥]§t p ªº¤T¨¤§Î
+            std::vector<Edge> polygon;           // Àx¦s¦hÃä§ÎÃä¬É
 
-            // æ‰¾å‡ºæ‰€æœ‰å¤–æ¥åœ“åŒ…å« p çš„ä¸‰è§’å½¢
-            for (int j = 0; j < triangles_.size(); j++) {
+            // §ä¥X©Ò¦³¥~±µ¶ê¥]§t p ªº¤T¨¤§Î
+            for (int j = 0; j < triangles_.size(); j++)
+            {
                 Triangle tri = triangles_[j];
                 cv::Point a = points_[tri.a];
                 cv::Point b = points_[tri.b];
                 cv::Point c = points_[tri.c];
-                // è‹¥ä¸‰è§’å½¢ä¸æ˜¯é€†æ™‚é‡æ’åˆ—å‰‡èª¿æ•´ä¹‹
+                // ­Y¤T¨¤§Î¤£¬O°f®É°w±Æ¦C«h½Õ¾ã¤§
                 if (ComputeDirectedArea(a, b, c) < 0)
                     swap(b, c);
                 if (IsInCircumcircle(p, a, b, c))
                     bad_triangles.push_back(tri);
             }
 
-            // å¾æ‰€æœ‰ä¸é©åˆçš„ä¸‰è§’å½¢ä¸­æ‰¾åˆ°ã€Œå¤šé‚Šå½¢å­”ã€çš„é‚Šç•Œ
-            // æ–¹æ³•ï¼šå°æ¯å€‹ä¸é©åˆä¸‰è§’å½¢çš„æ¯ä¸€é‚Šï¼Œå¦‚æœè©²é‚Šåœ¨å…¶ä»–ä¸é©åˆä¸‰è§’å½¢ä¸­æ²’æœ‰å‡ºç¾éï¼Œå‰‡æ­¤é‚Šå±¬æ–¼é‚Šç•Œ
-            for (size_t i_tri = 0; i_tri < bad_triangles.size(); i_tri++) {
-                // ä¸‰è§’å½¢æœ‰ä¸‰å€‹é‚Š
+            // ±q©Ò¦³¤£¾A¦Xªº¤T¨¤§Î¤¤§ä¨ì¡u¦hÃä§Î¤Õ¡vªºÃä¬É
+            // ¤èªk¡G¹ï¨C­Ó¤£¾A¦X¤T¨¤§Îªº¨C¤@Ãä¡A¦pªG¸ÓÃä¦b¨ä¥L¤£¾A¦X¤T¨¤§Î¤¤¨S¦³¥X²{¹L¡A«h¦¹ÃäÄİ©óÃä¬É
+            for (size_t i_tri = 0; i_tri < bad_triangles.size(); i_tri++)
+            {
+                // ¤T¨¤§Î¦³¤T­ÓÃä
                 Edge edges[3] = {
                     {bad_triangles[i_tri].a, bad_triangles[i_tri].b},
                     {bad_triangles[i_tri].b, bad_triangles[i_tri].c},
-                    {bad_triangles[i_tri].c, bad_triangles[i_tri].a} };
-                for (int e = 0; e < 3; e++) {
+                    {bad_triangles[i_tri].c, bad_triangles[i_tri].a}};
+                for (int e = 0; e < 3; e++)
+                {
                     bool shared = false;
-                    // èˆ‡å…¶ä»–ä¸é©åˆä¸‰è§’å½¢çš„é‚Šåšæ¯”å°
-                    for (size_t j_tri = 0; j_tri < bad_triangles.size(); j_tri++) {
+                    // »P¨ä¥L¤£¾A¦X¤T¨¤§ÎªºÃä°µ¤ñ¹ï
+                    for (size_t j_tri = 0; j_tri < bad_triangles.size(); j_tri++)
+                    {
                         if (i_tri == j_tri)
                             continue;
                         Edge other_edges[3] = {
                             {bad_triangles[j_tri].a, bad_triangles[j_tri].b},
                             {bad_triangles[j_tri].b, bad_triangles[j_tri].c},
-                            {bad_triangles[j_tri].c, bad_triangles[j_tri].a} };
-                        for (int k = 0; k < 3; k++) {
-                            if (edges[e] == other_edges[k]) {
+                            {bad_triangles[j_tri].c, bad_triangles[j_tri].a}};
+                        for (int k = 0; k < 3; k++)
+                        {
+                            if (edges[e] == other_edges[k])
+                            {
                                 shared = true;
                                 break;
                             }
@@ -133,58 +147,216 @@ namespace triangulation {
                 }
             }
 
-            // åˆªé™¤æ‰€æœ‰å¤–æ¥åœ“åŒ…å« p çš„ä¸‰è§’å½¢
+            // §R°£©Ò¦³¥~±µ¶ê¥]§t p ªº¤T¨¤§Î
             triangles_.erase(remove_if(triangles_.begin(), triangles_.end(),
-                [p, this](const Triangle& tri) {
-                    cv::Point a = this->points_[tri.a];
-                    cv::Point b = this->points_[tri.b];
-                    cv::Point c = this->points_[tri.c];
-                    if (ComputeDirectedArea(a, b, c) < 0)
-                        swap(b, c);
-                    return IsInCircumcircle(p, a, b, c);
-                }),
-                triangles_.end());
+                                       [p, this](const Triangle &tri)
+                                       {
+                                           cv::Point a = this->points_[tri.a];
+                                           cv::Point b = this->points_[tri.b];
+                                           cv::Point c = this->points_[tri.c];
+                                           if (ComputeDirectedArea(a, b, c) < 0)
+                                               swap(b, c);
+                                           return IsInCircumcircle(p, a, b, c);
+                                       }),
+                             triangles_.end());
 
-            // å°‡æ–°é» p èˆ‡å¤šé‚Šå½¢é‚Šç•Œå„é‚Šé€£çµå½¢æˆæ–°çš„ä¸‰è§’å½¢
-            for (auto& edge : polygon)
-                triangles_.push_back({ edge.a, edge.b, i });
+            // ±N·sÂI p »P¦hÃä§ÎÃä¬É¦UÃä³sµ²§Î¦¨·sªº¤T¨¤§Î
+            for (auto &edge : polygon)
+                triangles_.push_back({edge.a, edge.b, i});
         }
 
-        // åˆªé™¤æ‰€æœ‰ä¸‰è§’å½¢ä¸­å‡ºç¾è¶…å¤§ä¸‰è§’å½¢é ‚é»çš„é‚£äº›ï¼ˆé€™äº›ä¸‰è§’å½¢æ˜¯è™›æ§‹å‡ºä¾†çš„è¼”åŠ©éƒ¨ä»½ï¼‰
+        // §R°£©Ò¦³¤T¨¤§Î¤¤¥X²{¶W¤j¤T¨¤§Î³»ÂIªº¨º¨Ç¡]³o¨Ç¤T¨¤§Î¬Oµêºc¥X¨Óªº»²§U³¡¥÷¡^
         triangles_.erase(remove_if(triangles_.begin(), triangles_.end(),
-            [original_n](const Triangle& tri) {
-                return (tri.a >= original_n || tri.b >= original_n || tri.c >= original_n);
-            }),
-            triangles_.end());
+                                   [original_n](const Triangle &tri)
+                                   {
+                                       return (tri.a >= original_n || tri.b >= original_n || tri.c >= original_n);
+                                   }),
+                         triangles_.end());
 
-        // åˆªé™¤æœ€å¾Œä¸‰å€‹è™›æ§‹çš„é»
+        // ??ªé?¤æ??å¾?ä¸???????æ§????é»?
         points_.erase(points_.end() - 3, points_.end());
     }
 
-    void TriangulationImageBuilder::DrawLineImage() {
+    void TriangulationImageBuilder::DrawLineImage()
+    {
         line_image_ = cv::Mat(height_, width_, CV_8UC3, cv::Scalar(255, 255, 255));
 
-        for (const auto& tri : triangles_) {
+        for (const auto &tri : triangles_)
+        {
             cv::line(line_image_, points_[tri.a], points_[tri.b], cv::Scalar(0, 0, 0), 1);
             cv::line(line_image_, points_[tri.a], points_[tri.c], cv::Scalar(0, 0, 0), 1);
             cv::line(line_image_, points_[tri.b], points_[tri.c], cv::Scalar(0, 0, 0), 1);
         }
     }
 
-    void TriangulationImageBuilder::DrawColoredImage(const cv::Mat& orig_image) {
-        // æ–½å·¥ä¸­ ...
+    void TriangulationImageBuilder::DrawColoredImage(const cv::Mat &orig_image, int mode)
+    {
+        colored_image_ = cv::Mat(height_, width_, CV_8UC3, cv::Scalar(255, 255, 255)); // ¥Õ©³¹Ï
+
+        auto quantize555 = [](const cv::Vec3b &px) -> cv::Vec3b
+        {
+            return {
+                static_cast<uchar>(px[0] & 0xF8),
+                static_cast<uchar>(px[1] & 0xF8),
+                static_cast<uchar>(px[2] & 0xF8)};
+        };
+
+        for (const auto &tri : triangles_)
+        {
+            const cv::Point &a = points_[tri.a];
+            const cv::Point &b = points_[tri.b];
+            const cv::Point &c = points_[tri.c];
+
+            std::vector<cv::Point> contour = {a, b, c};
+
+            // «Ø¥ß mask¡A§ä¥X¤T¨¤§Î¤º pixel
+            cv::Mat mask(height_, width_, CV_8UC1, cv::Scalar(0));
+            cv::fillConvexPoly(mask, contour, 255);
+
+            std::vector<cv::Point> nz;
+            cv::findNonZero(mask, nz);
+
+            cv::Scalar fill_color = cv::Scalar(0, 0, 0); // fallback default
+
+            if (mode == 1)
+            {
+                // -------- Mode 1: ²³¼Æ + 5-bit ¶q¤Æ --------
+                std::unordered_map<int, int> hist;
+
+                auto hash555 = [](const cv::Vec3b &px) -> int
+                {
+                    return ((px[2] & 0xF8) << 10) | ((px[1] & 0xF8) << 5) | (px[0] & 0xF8);
+                };
+
+                for (const auto &p : nz)
+                {
+                    if (orig_image.channels() == 4)
+                    {
+                        const cv::Vec4b &px = orig_image.at<cv::Vec4b>(p);
+                        if (px[3] == 0) // ignore transparent background
+                            continue;
+                        ++hist[hash555(cv::Vec3b(px[0], px[1], px[2]))];
+                    }
+                    else
+                    {
+                        const cv::Vec3b &px = orig_image.at<cv::Vec3b>(p);
+                        ++hist[hash555(px)];
+                    }
+                }
+
+                int max_freq = 0;
+                int best_color = 0;
+
+                for (const auto &kv : hist)
+                {
+                    if (kv.second > max_freq)
+                    {
+                        max_freq = kv.second;
+                        best_color = kv.first;
+                    }
+                }
+
+                uchar r = (best_color >> 10) & 0xF8;
+                uchar g = (best_color >> 5) & 0xF8;
+                uchar b = best_color & 0xF8;
+
+                fill_color = cv::Scalar(b, g, r);
+            }
+            else if (mode == 2)
+            {
+                // -------- Mode 2: ²³¼Æ (¤£¶q¤Æ¡Aª½±µ¥Î 24-bit ­ì¦â) --------
+                std::unordered_map<int, int> hist;
+
+                auto rgb_to_key = [](const cv::Vec3b &px) -> int
+                {
+                    return (px[2] << 16) | (px[1] << 8) | px[0]; // R<<16 | G<<8 | B
+                };
+
+                for (const auto &p : nz)
+                {
+                    if (orig_image.channels() == 4)
+                    {
+                        const cv::Vec4b &px = orig_image.at<cv::Vec4b>(p);
+                        if (px[3] == 0)
+                            continue;
+                        ++hist[rgb_to_key(cv::Vec3b(px[0], px[1], px[2]))];
+                    }
+                    else
+                    {
+                        const cv::Vec3b &px = orig_image.at<cv::Vec3b>(p);
+                        ++hist[rgb_to_key(px)];
+                    }
+                }
+
+                int max_freq = 0;
+                int best_color = 0;
+
+                for (const auto &kv : hist)
+                {
+                    if (kv.second > max_freq)
+                    {
+                        max_freq = kv.second;
+                        best_color = kv.first;
+                    }
+                }
+
+                uchar r = (best_color >> 16) & 0xFF;
+                uchar g = (best_color >> 8) & 0xFF;
+                uchar b = best_color & 0xFF;
+
+                fill_color = cv::Scalar(b, g, r);
+            }
+            else
+            {
+                // -------- Mode 3: ¥­§¡¦â --------
+                cv::Vec3d acc(0, 0, 0);
+                int count = 0;
+
+                for (const auto &p : nz)
+                {
+                    if (orig_image.channels() == 4)
+                    {
+                        const cv::Vec4b &px = orig_image.at<cv::Vec4b>(p);
+                        if (px[3] == 0)
+                            continue;
+                        acc += cv::Vec3d(px[0], px[1], px[2]);
+                    }
+                    else
+                    {
+                        const cv::Vec3b &px = orig_image.at<cv::Vec3b>(p);
+                        acc += px;
+                    }
+                    ++count;
+                }
+
+                if (count > 0)
+                {
+                    cv::Vec3b avg_color(
+                        static_cast<uchar>(acc[0] / count),
+                        static_cast<uchar>(acc[1] / count),
+                        static_cast<uchar>(acc[2] / count));
+
+                    fill_color = cv::Scalar(avg_color[0], avg_color[1], avg_color[2]);
+                }
+            }
+
+            cv::fillConvexPoly(colored_image_, contour, fill_color);
+        }
     };
 
-    void TriangulationImageBuilder::WriteLineImage(const std::string filename) const {
+    void TriangulationImageBuilder::WriteLineImage(const std::string filename) const
+    {
         cv::imwrite(filename, this->line_image_);
     };
 
-    void TriangulationImageBuilder::WriteColoredImage(const std::string filename) const {
+    void TriangulationImageBuilder::WriteColoredImage(const std::string filename) const
+    {
         cv::imwrite(filename, this->colored_image_);
     };
 
-    // ç›®å‰æš«æ™‚ç”¨ MSE
-    double TriangulationImageBuilder::ComputeFitness(const cv::Mat& orig_image) const {
+    // ¥Ø«e¼È®É¥Î MSE
+    double TriangulationImageBuilder::ComputeFitness(const cv::Mat &orig_image) const
+    {
 
         CV_Assert(orig_image.size() == colored_image_.size());
         CV_Assert(orig_image.type() == colored_image_.type());
@@ -204,9 +376,9 @@ namespace triangulation {
             mse += s[i];
 
         // Average
+        // std::cout << "channels:" << orig_image.channels()<<"\n";
         mse /= (orig_image.total() * orig_image.channels());
 
         return mse;
     }
 } // namespace triangulation
-

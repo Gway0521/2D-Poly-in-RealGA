@@ -28,6 +28,7 @@ namespace triangulation
     class TriangulationImageBuilder
     {
     public:
+        TriangulationImageBuilder();
         TriangulationImageBuilder(int w, int h);
         TriangulationImageBuilder(int w, int h, const std::vector<cv::Point> &points);
 
@@ -52,6 +53,9 @@ namespace triangulation
         const std::vector<Triangle> &triangles() const { return triangles_; }
         const cv::Mat &line_image() const { return line_image_; }
         const cv::Mat &colored_image() const { return colored_image_; }
+
+        void set_width(int width) { width_ = width; }
+        void set_height(int height) { height_ = height; }
 
     private:
         int width_;

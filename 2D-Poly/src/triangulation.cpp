@@ -39,6 +39,7 @@ namespace triangulation
         return det > 0;
     }
 
+    TriangulationImageBuilder::TriangulationImageBuilder() { width_ = -1; height_ = -1; };
     TriangulationImageBuilder::TriangulationImageBuilder(int width, int height) : width_(width), height_(height) {};
     TriangulationImageBuilder::TriangulationImageBuilder(int width, int height, const std::vector<cv::Point> &points) : width_(width), height_(height)
     {
@@ -51,6 +52,7 @@ namespace triangulation
     void TriangulationImageBuilder::RunDelaunay(const std::vector<cv::Point> &points)
     {
         points_ = points;
+        triangles_.clear();
         int original_n = points_.size();
 
         // 計算點集合的邊界
@@ -173,7 +175,6 @@ namespace triangulation
                                    }),
                          triangles_.end());
 
-        // ??芷?斗??敺?銝???????瑽????暺?
         points_.erase(points_.end() - 3, points_.end());
     }
 
@@ -189,159 +190,134 @@ namespace triangulation
         }
     }
 
-    void TriangulationImageBuilder::DrawColoredImage(const cv::Mat &orig_image, int mode)
+    void TriangulationImageBuilder::DrawColoredImage(const cv::Mat& orig_image, int mode)
     {
-        colored_image_ = cv::Mat(height_, width_, CV_8UC3, cv::Scalar(255, 255, 255)); // 白底圖
+        // 準備 output 與 mask
+        colored_image_.create(height_, width_, CV_8UC3);
+        colored_image_.setTo(cv::Scalar(255, 255, 255));  // 白底
         cv::Mat mask(height_, width_, CV_8UC1, cv::Scalar(0));
 
-        auto quantize555 = [](const cv::Vec3b &px) -> cv::Vec3b
+        // 針對 mode 1，預先建立 5-bit histogram 與鍵集合
+        static std::vector<int> hist5bit(32 * 32 * 32);
+        std::vector<int> keys5bit;
+        keys5bit.reserve(1024);
+
+        // lambda for hash555
+        auto hash555 = [](const cv::Vec3b& px)->int {
+            return ((px[2] & 0xF8) >> 3) * 32 * 32
+                + ((px[1] & 0xF8) >> 3) * 32
+                + ((px[0] & 0xF8) >> 3);
+            };
+
+        // 遍歷所有三角形
+        for (const auto& tri : triangles_)
         {
-            return {
-                static_cast<uchar>(px[0] & 0xF8),
-                static_cast<uchar>(px[1] & 0xF8),
-                static_cast<uchar>(px[2] & 0xF8)};
-        };
+            // 取出三個頂點，算出 bounding box
+            cv::Point pts[3] = {
+                points_[tri.a],
+                points_[tri.b],
+                points_[tri.c]
+            };
+            cv::Rect roi = cv::boundingRect(std::vector<cv::Point>(pts, pts + 3))
+                & cv::Rect(0, 0, width_, height_);
 
-        for (const auto &tri : triangles_)
-        {
-            const cv::Point &a = points_[tri.a];
-            const cv::Point &b = points_[tri.b];
-            const cv::Point &c = points_[tri.c];
+            // 只在 ROI 內清除舊 mask、並填新三角形
+            auto maskROI = mask(roi);
+            maskROI.setTo(0);
+            cv::Point triROI[3] = {
+                pts[0] - roi.tl(),
+                pts[1] - roi.tl(),
+                pts[2] - roi.tl()
+            };
+            cv::fillConvexPoly(maskROI, triROI, 3, cv::Scalar(255), cv::LINE_AA);
 
-            std::vector<cv::Point> contour = {a, b, c};
-
-            // 建立 mask，找出三角形內 pixel
-            mask.setTo(0);
-            cv::fillConvexPoly(mask, contour, 255);
-
-            std::vector<cv::Point> nz;
-            cv::findNonZero(mask, nz);
-
-            cv::Scalar fill_color = cv::Scalar(0, 0, 0); // fallback default
-
+            // 根據 mode 統計顏色
+            cv::Scalar fill_color(0, 0, 0);
             if (mode == 1)
             {
-                // -------- Mode 1: 眾數 + 5-bit 量化 --------
-                std::unordered_map<int, int> hist;
+                // 重置 histogram（只清用到的）
+                for (int idx : keys5bit) hist5bit[idx] = 0;
+                keys5bit.clear();
 
-                auto hash555 = [](const cv::Vec3b &px) -> int
+                int max_freq = 0, best_idx = 0;
+                for (int y = roi.y; y < roi.y + roi.height; ++y)
                 {
-                    return ((px[2] & 0xF8) << 10) | ((px[1] & 0xF8) << 5) | (px[0] & 0xF8);
-                };
-
-                for (const auto &p : nz)
-                {
-                    if (orig_image.channels() == 4)
+                    const uchar* mrow = mask.ptr<uchar>(y) + roi.x;
+                    for (int x = roi.x; x < roi.x + roi.width; ++x, ++mrow)
                     {
-                        const cv::Vec4b &px = orig_image.at<cv::Vec4b>(p);
-                        if (px[3] == 0) // ignore transparent background
-                            continue;
-                        ++hist[hash555(cv::Vec3b(px[0], px[1], px[2]))];
-                    }
-                    else
-                    {
-                        const cv::Vec3b &px = orig_image.at<cv::Vec3b>(p);
-                        ++hist[hash555(px)];
+                        if (!*mrow) continue;
+                        cv::Vec3b px = orig_image.at<cv::Vec3b>(y, x);
+                        int idx = hash555(px);
+                        if (hist5bit[idx]++ == 0) keys5bit.push_back(idx);
+                        if (hist5bit[idx] > max_freq) {
+                            max_freq = hist5bit[idx];
+                            best_idx = idx;
+                        }
                     }
                 }
-
-                int max_freq = 0;
-                int best_color = 0;
-
-                for (const auto &kv : hist)
-                {
-                    if (kv.second > max_freq)
-                    {
-                        max_freq = kv.second;
-                        best_color = kv.first;
-                    }
-                }
-
-                uchar r = (best_color >> 10) & 0xF8;
-                uchar g = (best_color >> 5) & 0xF8;
-                uchar b = best_color & 0xF8;
-
-                fill_color = cv::Scalar(b, g, r);
+                // 解出 r/g/b
+                uchar r5 = (best_idx / (32 * 32)) << 3;
+                uchar g5 = ((best_idx / 32) % 32) << 3;
+                uchar b5 = (best_idx % 32) << 3;
+                fill_color = cv::Scalar(b5, g5, r5);
             }
             else if (mode == 2)
             {
-                // -------- Mode 2: 眾數 (不量化，直接用 24-bit 原色) --------
-                std::unordered_map<int, int> hist;
+                // 24-bit 原色 histogram
+                static thread_local std::unordered_map<int, int> hist24bit;
+                hist24bit.clear();
+                hist24bit.reserve(roi.area() / 4);  // 估計大概大小
+                int max_freq = 0, best_key = 0;
 
-                auto rgb_to_key = [](const cv::Vec3b &px) -> int
+                for (int y = roi.y; y < roi.y + roi.height; ++y)
                 {
-                    return (px[2] << 16) | (px[1] << 8) | px[0]; // R<<16 | G<<8 | B
-                };
-
-                for (const auto &p : nz)
-                {
-                    if (orig_image.channels() == 4)
+                    const uchar* mrow = mask.ptr<uchar>(y) + roi.x;
+                    for (int x = roi.x; x < roi.x + roi.width; ++x, ++mrow)
                     {
-                        const cv::Vec4b &px = orig_image.at<cv::Vec4b>(p);
-                        if (px[3] == 0)
-                            continue;
-                        ++hist[rgb_to_key(cv::Vec3b(px[0], px[1], px[2]))];
-                    }
-                    else
-                    {
-                        const cv::Vec3b &px = orig_image.at<cv::Vec3b>(p);
-                        ++hist[rgb_to_key(px)];
+                        if (!*mrow) continue;
+                        cv::Vec3b px = orig_image.at<cv::Vec3b>(y, x);
+                        int key = (px[2] << 16) | (px[1] << 8) | px[0];
+                        int freq = ++hist24bit[key];
+                        if (freq > max_freq) {
+                            max_freq = freq;
+                            best_key = key;
+                        }
                     }
                 }
-
-                int max_freq = 0;
-                int best_color = 0;
-
-                for (const auto &kv : hist)
-                {
-                    if (kv.second > max_freq)
-                    {
-                        max_freq = kv.second;
-                        best_color = kv.first;
-                    }
-                }
-
-                uchar r = (best_color >> 16) & 0xFF;
-                uchar g = (best_color >> 8) & 0xFF;
-                uchar b = best_color & 0xFF;
-
-                fill_color = cv::Scalar(b, g, r);
+                fill_color = cv::Scalar((best_key & 0xFF),
+                    (best_key >> 8) & 0xFF,
+                    (best_key >> 16) & 0xFF);
             }
-            else
+            else  // mode 3
             {
-                // -------- Mode 3: 平均色 --------
                 cv::Vec3d acc(0, 0, 0);
-                int count = 0;
-
-                for (const auto &p : nz)
+                int cnt = 0;
+                for (int y = roi.y; y < roi.y + roi.height; ++y)
                 {
-                    if (orig_image.channels() == 4)
+                    const uchar* mrow = mask.ptr<uchar>(y) + roi.x;
+                    for (int x = roi.x; x < roi.x + roi.width; ++x, ++mrow)
                     {
-                        const cv::Vec4b &px = orig_image.at<cv::Vec4b>(p);
-                        if (px[3] == 0)
-                            continue;
-                        acc += cv::Vec3d(px[0], px[1], px[2]);
-                    }
-                    else
-                    {
-                        const cv::Vec3b &px = orig_image.at<cv::Vec3b>(p);
+                        if (!*mrow) continue;
+                        cv::Vec3b px = orig_image.at<cv::Vec3b>(y, x);
                         acc += px;
+                        ++cnt;
                     }
-                    ++count;
                 }
-
-                if (count > 0)
-                {
-                    cv::Vec3b avg_color(
-                        static_cast<uchar>(acc[0] / count),
-                        static_cast<uchar>(acc[1] / count),
-                        static_cast<uchar>(acc[2] / count));
-
-                    fill_color = cv::Scalar(avg_color[0], avg_color[1], avg_color[2]);
+                if (cnt > 0) {
+                    acc /= cnt;
+                    fill_color = cv::Scalar((uchar)acc[0],
+                        (uchar)acc[1],
+                        (uchar)acc[2]);
                 }
             }
 
-            cv::fillConvexPoly(colored_image_, contour, fill_color);
+            // 在 output 圖上填色
+            cv::fillConvexPoly(
+                colored_image_,
+                pts, 3,
+                fill_color,
+                cv::LINE_AA
+            );
         }
     };
 

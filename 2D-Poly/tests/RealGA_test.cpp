@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include <filesystem>
 
@@ -44,6 +45,64 @@ private:
     triangulation::TriangulationImageBuilder triangulation_image_builder_;
 };
 
+class ResultWriter {
+public:
+    void output(std::ostream& os, const std::string& label, const std::string& value) {
+        os << std::left << std::setw(40) << label << value << '\n';
+    }
+
+    void output(std::ostream& os, const std::string& label, int value) {
+        os << std::left << std::setw(40) << label << value << '\n';
+    }
+
+    void output(std::ostream& os, const std::string& label, unsigned long long value) {
+        os << std::left << std::setw(40) << label << value << '\n';
+    }
+
+    void output(std::ostream& os, const std::string& label, float value) {
+        os << std::left << std::setw(40) << label << value << '\n';
+    }
+
+    void print_settings(std::ostream& os, const RealGAOptions& options, int gen, const std::string& image_path) {
+        os << "--------------- Setting ---------------\n";
+        output(os, "Population Size(nInitial): ", options.populationSize);
+        output(os, "Chromosome Size(ell): ", options.chromosomeSize);
+        output(os, "Number of Nodes: ", options.chromosomeSize / 2);
+        output(os, "Number of Generations: ", gen);
+        output(os, "Image Path: ", "'" + image_path + "'");
+        output(os, "Seed: ", options.seed);
+
+        os << "Lower Bounds: [";
+        for (float lb : options.lowerBounds)
+            os << " " << lb;
+        os << " ]\n";
+        os << "Upper Bounds: [";
+        for (float ub : options.upperBounds)
+            os << " " << ub;
+        os << " ]\n";
+
+        output(os, "Selection Type: ",
+            (options.selectionType == ROULETTE_WHEEL_SELECTION) ? "Roulette Wheel Selection" : "Tournament Selection");
+        output(os, "Selection Tournament Size: ", options.selectionTournamentSize);
+        output(os, "Selection Tournament Probability: ", options.selectionTournamentProbability);
+
+        output(os, "Crossover Type: ",
+            (options.crossoverType == UNIFORM_CROSSOVER) ? "Uniform Crossover" : "Single-Point Crossover");
+
+        output(os, "Mutation Type: ",
+            (options.mutationType == UNIFORM_MUTATION) ? "Uniform Mutation" : "Gaussian Mutation");
+        output(os, "Mutation Rate: ", options.mutationRate);
+        if (options.mutationType == UNIFORM_MUTATION) {
+            output(os, "Mutation Uniform Perce: ", options.mutationUniformPerc);
+        }
+        else {
+            output(os, "Mutation Gaussian Perc Delta: ", options.mutationGaussianPercDelta);
+            output(os, "Mutation Gaussian Perc Min: ", options.mutationGaussianPercMin);
+        }
+        os << "---------------------------------------\n";
+    }
+};
+
 
 int main(int argc, char *argv[]) {
     if (argc != 5) {
@@ -55,12 +114,6 @@ int main(int argc, char *argv[]) {
     const int nInitial = std::atoi(argv[2]);
     const int gen = std::atoi(argv[3]);
     const std::string image_path = argv[4];
-    std::cout << "--------------- Setting ---------------" << std::endl;
-    std::cout << "Number of Nodes: " << num_nodes << std::endl;
-    std::cout << "Population Size(nInitial): " << nInitial << std::endl;
-    std::cout << "Number of Generations: " << gen << std::endl;
-    std::cout << "Image Path: '" << image_path << "'" << std::endl;
-    std::cout << "---------------------------------------" << std::endl;
 
     cv::Mat original_image = cv::imread(image_path, cv::IMREAD_COLOR);
     if (original_image.empty()) {
@@ -87,15 +140,27 @@ int main(int argc, char *argv[]) {
     options.setBounds(LB, UB);
     options.setVerbose("soft");
 
-
     // Save results
     triangulation::TriangulationImageBuilder triangulation_image_builder(width, height);
     std::string filename = std::string();
     for (int i = 1; i <= 3; ++i) {
         filename.append(static_cast<std::string>(argv[i]) + "_");
     }
-    fs::create_directories("line_images");
-    fs::create_directories("colored_images");
+    filename[filename.size() - 1] = '/';
+    fs::create_directories(filename);
+    fs::create_directories(filename + "line_images/");
+    fs::create_directories(filename + "colored_images/");
+
+    ResultWriter result_writer;
+    result_writer.print_settings(std::cout, options, gen, image_path);
+    std::ofstream fout(filename + "setting.txt");
+    if (fout.is_open()) {
+        result_writer.print_settings(fout, options, gen, image_path);
+        fout.close();
+    }
+    else {
+        std::cerr << "Failed to open output file!" << std::endl;
+    }
 
     // Init Genetic Algorithm with options, fitness function and keepState=false
     RealGA ga;
@@ -113,9 +178,9 @@ int main(int argc, char *argv[]) {
         RealChromosome best = ga.getBestChromosome();
         triangulation_image_builder.RunDelaunay(Chromosome2Points(best));
         triangulation_image_builder.DrawLineImage();
-        triangulation_image_builder.WriteLineImage("line_images/" + filename + to_string(i+1) + ".jpg");
+        triangulation_image_builder.WriteLineImage(filename + "line_images/" + to_string(i+1) + ".jpg");
         triangulation_image_builder.DrawColoredImage(original_image, 3);
-        triangulation_image_builder.WriteColoredImage("colored_images/" + filename + to_string(i+1) + ".jpg");
+        triangulation_image_builder.WriteColoredImage(filename + "colored_images/" + to_string(i+1) + ".jpg");
 
         std::cout << "Best Fitness value = " << best.fitness << std::endl;
         std::cout << "---------------------------------------" << std::endl;

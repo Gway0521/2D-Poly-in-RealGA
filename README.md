@@ -47,6 +47,9 @@
 
    ```
    cd release
-   ./realga_test
+
    ./triangulation_test
+
+   ./realga_test [numNodes] [nInitial] [gen] [imagePath]
+   ./realga_test 50 50 50 ../../dataset/01.jpg
    ```

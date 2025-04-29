@@ -102,10 +102,10 @@ void SettingBuilder::output(std::ostream& os, const std::string& label, float va
 
 void SettingBuilder::print_settings(std::ostream& os, const RealGAOptions& options, const std::string& image_path) {
     os << "--------------- Setting ---------------\n";
-    output(os, "Population Size(nInitial): ", options.populationSize);
-    output(os, "Chromosome Size(ell): ", options.chromosomeSize);
-    output(os, "Number of Nodes: ", options.chromosomeSize / 2);
-    output(os, "Number of Generations: ", options.gen);
+    output(os, "Population Size(nInitial): ", static_cast<unsigned long long>(options.populationSize));
+    output(os, "Chromosome Size(ell): ", static_cast<unsigned long long>(options.chromosomeSize));
+    output(os, "Number of Nodes: ", static_cast<unsigned long long>(options.chromosomeSize / 2));
+    output(os, "Number of Generations: ", static_cast<unsigned long long>(options.gen));
     output(os, "Image Path: ", "'" + image_path + "'");
     output(os, "Seed: ", options.seed);
 

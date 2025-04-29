@@ -50,6 +50,23 @@
 
    ./triangulation_test
 
-   ./realga_test [numNodes] [nInitial] [gen] [imagePath]
-   ./realga_test 50 50 50 ../../dataset/01.jpg
+   ./RealGA_test -image_path <path> -expName <name> [-numNodes <int>] [-nInitial <int>] [-gen <int>]
+   [-selectionType <string>] [-tournamentSize <int>] [-tournamentProb <float>]
+   [-crossoverType <string>] [-BLXAlpha <float>] [-mutationType <string>] [-mutationRate <float>]
    ```
+
+- 在執行 RealGA_test 時，有必要參數（必填）：\
+  `-image_path <path>`：輸入影像的檔案路徑\
+  `-expName <name>`：實驗名稱，作為結果輸出資料夾的名稱
+
+- 其餘參數為選填參數（非必填），調整演算法的細節：\
+  `-numNodes <int>`：node 數量（default：80）\
+  `-nInitial <int>`：population size（default：100）\
+  `-gen <int>`：generation 數（default：100）\
+  `-selectionType <string>`：selection type（default：tournament）\
+  `-tournamentSize <int>`：tournament size（default：2）\
+  `-tournamentProb <float>`：tournament probability（default：1）\
+  `-crossoverType <string>`：crossover type（default：BLX1p）\
+  `-BLXAlpha <float>`：BLX alpha（default：0.1）\
+  `-mutationType <string>`：mutation type（default：uniform）\
+  `-mutationRate <float>`：mutation rate（default：0.0125）

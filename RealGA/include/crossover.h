@@ -48,4 +48,15 @@ private:
     vector<int> mSwitchIndices;
 };
 */
+
+class BLX1pCrossover : public Crossover {
+public:
+    BLX1pCrossover(size_t chromosomeSize, float BLX_alpha);
+    ~BLX1pCrossover();
+    void crossover(RealChromosome& a, RealChromosome& b, RealChromosome& offspring);
+private:
+    size_t mChromosomeSize;
+    float mBLX_alpha;
+};
+
 #endif // REALGA_CROSSOVER_H

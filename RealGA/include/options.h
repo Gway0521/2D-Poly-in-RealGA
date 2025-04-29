@@ -21,7 +21,7 @@
 using namespace std;
 
 typedef enum { ROULETTE_WHEEL_SELECTION=1, TOURNAMENT_SELECTION } SelectionType;
-typedef enum { UNIFORM_CROSSOVER=1, SINGLE_POINT_CROSSOVER } CrossoverType;
+typedef enum { UNIFORM_CROSSOVER=1, SINGLE_POINT_CROSSOVER, BLX1P_CROSSOVER } CrossoverType;
 typedef enum { UNIFORM_MUTATION=1, GAUSSIAN_MUTATION} MutationType;
 typedef enum { NO_VERBOSE=0, SOFT_VERBOSE=1, HARD_VERBOSE=2} VerboseType;
 
@@ -53,6 +53,9 @@ public:
 
     void setCrossoverType(string value);
     void setSinglePointCrossoverIndex(int value);
+    void setBLX_alpha(float value);
+
+    void setGeneration(size_t value);
 
     void checkOptions();
 
@@ -63,6 +66,7 @@ public:
     vector<float> upperBounds;
     int seed;
     VerboseType verbose;
+    size_t gen;
 
     float elitismFactor;
     bool mutateDuplicatedFitness;
@@ -75,6 +79,7 @@ public:
     //CrossoverOpt
     CrossoverType crossoverType;
     int crossoverindexA;
+    float BLX_alpha;
 
     // MutationOpt
     MutationType mutationType;

@@ -129,6 +129,9 @@ void RealGA::init(RealGAOptions &opt, FitnessFunction *func, bool keepState)
         case UNIFORM_CROSSOVER:
             mCrossover = new UniformCrossover(mOptions.chromosomeSize);
             break;
+        case BLX1P_CROSSOVER:
+            mCrossover = new BLX1pCrossover(mOptions.chromosomeSize, mOptions.BLX_alpha);
+            break;
         }
         REALGA_ERROR(mCrossover == nullptr, "Crossover is null");
         // Create the mutation strategy

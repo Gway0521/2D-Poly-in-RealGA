@@ -2,24 +2,25 @@
 
 RealGAOptions::RealGAOptions() {
     populationSize = 100;
-    chromosomeSize = -1;
+    chromosomeSize = 160;
     verbose = NO_VERBOSE;
     seed = 42;
     elitismFactor = 0.1;
     mutateDuplicatedFitness = true;
+    gen = 100;
 
     //SelectionOpt
-    selectionType = ROULETTE_WHEEL_SELECTION;
-    selectionTournamentSize = 16;
-    selectionTournamentProbability = 0.85;
+    selectionType = TOURNAMENT_SELECTION;
+    selectionTournamentSize = 2;
+    selectionTournamentProbability = 1;
 
     //CrossoverOpt
-    crossoverType = UNIFORM_CROSSOVER;
+    crossoverType = BLX1P_CROSSOVER;
     crossoverindexA = -1;
 
     // MutationOpt
     mutationType = UNIFORM_MUTATION;
-    mutationRate = 0.1;
+    mutationRate = 0.0125;
     // Uniform mutation
     mutationUniformPerc = 0.25;
 
@@ -130,12 +131,23 @@ void RealGAOptions::setCrossoverType(string value) {
         crossoverType = UNIFORM_CROSSOVER;
     else if (value == "single_point")
         crossoverType = SINGLE_POINT_CROSSOVER;
+    else if (value == "BLX1p")
+        crossoverType = BLX1P_CROSSOVER;
     else
         REALGA_ERROR(1, value << " is an invalid crossover type");
 }
 
 void RealGAOptions::setSinglePointCrossoverIndex(int value) {
     crossoverindexA = value;
+}
+
+void RealGAOptions::setBLX_alpha(float value) {
+    BLX_alpha = value;
+}
+
+void RealGAOptions::setGeneration(size_t value) {
+    REALGA_ERROR(value <= 0, "Generation must be > 0");
+    gen = value;
 }
 
 void RealGAOptions::checkOptions()

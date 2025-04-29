@@ -31,10 +31,18 @@ void TournamentSelection::select(vector<float> &fitnessValues, int &indexA, int 
     indexA = tournament(fitnessValues);
     indexB = tournament(fitnessValues);
 
+    while (indexA == indexB) {
+        indexB = tournament(fitnessValues);
+    }
+
+    /*
     while(indexA == indexB) {
+        if (indexA != 0 || indexB != 0)
+            cout << indexA << ' ' << indexB << endl;
         indexA = Stat::randIndex(mTournamentSize-1);
         indexB = Stat::randIndex(mTournamentSize-1);
     }
+    */
 }
 
 int TournamentSelection::tournament(vector<float> &fitnessValues) {

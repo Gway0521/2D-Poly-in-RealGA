@@ -39,12 +39,10 @@ namespace triangulation
         return det > 0;
     }
 
-    TriangulationImageBuilder::TriangulationImageBuilder() { width_ = -1; height_ = -1; };
-    TriangulationImageBuilder::TriangulationImageBuilder(int width, int height) : width_(width), height_(height) {};
-    TriangulationImageBuilder::TriangulationImageBuilder(int width, int height, const std::vector<cv::Point> &points) : width_(width), height_(height)
-    {
-        RunDelaunay(points);
-    };
+    TriangulationImageBuilder::TriangulationImageBuilder() :
+        width_(-1), height_(-1), mode_(3) {}
+    TriangulationImageBuilder::TriangulationImageBuilder(const cv::Mat& original_image, int mode): 
+        original_image_(original_image), mode_(mode), width_(original_image.cols), height_(original_image.rows) {}
 
     // 使用 Bowyer–Watson 演算法構造 Delaunay 三角剖分
     // 傳入的 points 陣列會暫時加入超大三角形的頂點，供演算法使用。
@@ -190,8 +188,15 @@ namespace triangulation
         }
     }
 
+    void TriangulationImageBuilder::DrawColoredImage() { 
+        CV_Assert(!original_image_.empty());
+        DrawColoredImage(original_image_, mode_); 
+    }
+
     void TriangulationImageBuilder::DrawColoredImage(const cv::Mat& orig_image, int mode)
     {
+        CV_Assert(!orig_image.empty());
+
         // 準備 output 與 mask
         colored_image_.create(height_, width_, CV_8UC3);
         colored_image_.setTo(cv::Scalar(255, 255, 255));  // 白底
@@ -321,41 +326,16 @@ namespace triangulation
         }
     };
 
-    void TriangulationImageBuilder::WriteLineImage(const std::string filename) const
+    void TriangulationImageBuilder::WriteLineImage(const std::string& filename) const
     {
+        CV_Assert(!line_image_.empty());
         cv::imwrite(filename, this->line_image_);
     };
 
-    void TriangulationImageBuilder::WriteColoredImage(const std::string filename) const
+    void TriangulationImageBuilder::WriteColoredImage(const std::string& filename) const
     {
+        CV_Assert(!colored_image_.empty());
         cv::imwrite(filename, this->colored_image_);
     };
 
-    // 目前暫時用 MSE
-    double TriangulationImageBuilder::ComputeFitness(const cv::Mat &orig_image) const
-    {
-
-        CV_Assert(orig_image.size() == colored_image_.size());
-        CV_Assert(orig_image.type() == colored_image_.type());
-
-        // Difference
-        cv::Mat diff;
-        cv::absdiff(orig_image, colored_image_, diff);
-        diff.convertTo(diff, CV_32F);
-
-        // Square
-        diff = diff.mul(diff);
-
-        // Accumulate
-        cv::Scalar s = cv::sum(diff);
-        double mse = 0.0;
-        for (int i = 0; i < diff.channels(); ++i)
-            mse += s[i];
-
-        // Average
-        // std::cout << "channels:" << orig_image.channels()<<"\n";
-        mse /= (orig_image.total() * orig_image.channels());
-
-        return mse;
-    }
 } // namespace triangulation

@@ -5,7 +5,8 @@
 #include <string>
 
 #include "options.h"
-#include "fitness.h"
+#include "fitnessfunction.h"
+#include "triangulation.h"
 
 
 class SettingBuilder {
@@ -16,13 +17,14 @@ public:
 
         // for 2D-poly
         string image_path;
+        triangulation::TriangulationImageBuilder builder;
 
         // for GA
         RealGAOptions options;
-        PixelFitness* myFitnessFunction;
+        FitnessFunction* fitness_function;
 
         ~Ret() {
-            delete myFitnessFunction;
+            delete fitness_function;
         }
     };
 
@@ -34,6 +36,10 @@ public:
     static void output(std::ostream& os, const std::string& label, float value);
 
     static void print_settings(std::ostream& os, const RealGAOptions& options, const std::string& image_path);
+
+
+    static int mode_num;
+    static string fitness_function_name;
 };
 
 #endif

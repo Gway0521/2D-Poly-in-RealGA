@@ -9,14 +9,19 @@
 
 #include "options.h"
 #include "fitness.h"
+#include "triangulation.h"
 
+int SettingBuilder::mode_num = 0;
+std::string SettingBuilder::fitness_function_name = "";
 
 SettingBuilder::Ret SettingBuilder::input(int argc, char* argv[]) {
     if (argc % 2 == 0) {
         std::cerr << "Usage: RealGA_test -image_path <string> -expName <string> "
             << "[-numNodes <int>] [-nInitial <int>] [-gen <int>] "
             << "[-selectionType <string>] [-tournamentSize <int>] [-tournamentProb <float>] "
-            << "[-crossoverType <string>] [-BLXAlpha <float>] [-mutationType <string>] [-mutationRate <float>]"
+            << "[-crossoverType <string>] [-BLXAlpha <float>] "
+            << "[-mutationType <string>] [-mutationRate <float>] [-mutateDuplicatedFitness <bool>] "
+            << "[-colorMode <int>] [-fitnessFunction <string>]"
             << std::endl;
         std::exit(EXIT_FAILURE);
     }
@@ -45,17 +50,16 @@ SettingBuilder::Ret SettingBuilder::input(int argc, char* argv[]) {
     if (flag) std::exit(EXIT_FAILURE);
 
     // basic options
-    if (args.count("-numNodes") != 0) ret.options.setChromosomeSize(std::atoi(args["-numNodes"].c_str()) * 2);
-    if (args.count("-nInitial") != 0) ret.options.setPopulationSize(std::atoi(args["-nInitial"].c_str()));
-    if (args.count("-gen") != 0) ret.options.setGeneration(std::atoi(args["-gen"].c_str()));
+    if (args.count("-numNodes") != 0) ret.options.setChromosomeSize(std::stoi(args["-numNodes"]) * 2);
+    if (args.count("-nInitial") != 0) ret.options.setPopulationSize(std::stoi(args["-nInitial"]));
+    if (args.count("-gen") != 0) ret.options.setGeneration(std::stoi(args["-gen"]));
 
-    // image and fitness
+    // image
     cv::Mat original_image = cv::imread(args["-image_path"], cv::IMREAD_COLOR);
     if (original_image.empty()) {
         std::cerr << "Failed to open input file: " << args["-image_path"] << std::endl;
         std::exit(EXIT_FAILURE);
     }
-    ret.myFitnessFunction = new PixelFitness(original_image);
 
     // LB and UB
     size_t ell = ret.options.chromosomeSize;
@@ -70,16 +74,48 @@ SettingBuilder::Ret SettingBuilder::input(int argc, char* argv[]) {
 
     // selection
     if (args.count("-selectionType") != 0) ret.options.setSelectionType(args["-selectionType"]);
-    if (args.count("-tournamentSize") != 0) ret.options.setSelectionTournamentSize(std::atoi(args["-tournamentSize"].c_str()));
-    if (args.count("-tournamentProb") != 0) ret.options.setSelectionTournamentProbability(std::atof(args["-tournamentProb"].c_str()));
+    if (args.count("-tournamentSize") != 0) ret.options.setSelectionTournamentSize(std::stoi(args["-tournamentSize"]));
+    if (args.count("-tournamentProb") != 0) ret.options.setSelectionTournamentProbability(std::stof(args["-tournamentProb"]));
 
     // crossover
     if (args.count("-crossoverType") != 0) ret.options.setCrossoverType(args["-crossoverType"]);
-    if (args.count("-BLXAlpha") != 0) ret.options.setBLX_alpha(std::atof(args["-BLXAlpha"].c_str()));
+    if (args.count("-BLXAlpha") != 0) ret.options.setBLX_alpha(std::stof(args["-BLXAlpha"]));
 
     // mutation
     if (args.count("-mutationType") != 0) ret.options.setMutationType(args["-mutationType"]);
-    if (args.count("-mutationRate") != 0) ret.options.setMutationRate(std::atof(args["-mutationRate"].c_str()));
+    if (args.count("-mutationRate") != 0) ret.options.setMutationRate(std::stof(args["-mutationRate"]));
+    if (args.count("-mutateDuplicatedFitness") != 0)
+        if (args["-mutateDuplicatedFitness"] == "false" || args["-mutateDuplicatedFitness"] == "False" || args["-mutateDuplicatedFitness"] == "0")
+            ret.options.setMutateDuplicatedFitness(false);
+        else
+            ret.options.setMutateDuplicatedFitness(true);
+
+    // color mode (default 3), fitness function (default PSNR) and builder
+    int mode = 3;
+    if (args.count("-colorMode") != 0)
+        mode = std::stoi(args["-colorMode"]);
+    mode_num = mode;
+
+    if (args.count("-fitnessFunction") != 0) {
+        if (args["-fitnessFunction"] == "MSE") {
+            fitness_function_name = "MSE";
+            ret.fitness_function = new fitness::MSE(original_image, mode);
+        }
+        else if (args["-fitnessFunction"] == "SSIM") {
+            fitness_function_name = "SSIM";
+            ret.fitness_function = new fitness::SSIM(original_image, mode);
+        }
+        else {
+            fitness_function_name = "PSNR";
+            ret.fitness_function = new fitness::PSNR(original_image, mode);
+        }
+    }
+    else {
+        fitness_function_name = "PSNR";
+        ret.fitness_function = new fitness::PSNR(original_image, mode);
+    }
+        
+    ret.builder = triangulation::TriangulationImageBuilder(original_image, mode);
 
     return ret;
 }
@@ -141,5 +177,8 @@ void SettingBuilder::print_settings(std::ostream& os, const RealGAOptions& optio
         output(os, "Mutation Gaussian Perc Delta: ", options.mutationGaussianPercDelta);
         output(os, "Mutation Gaussian Perc Min: ", options.mutationGaussianPercMin);
     }
+
+    output(os, "Mode: ", mode_num);
+    output(os, "Fitness Function: ", fitness_function_name);
     os << "---------------------------------------\n";
 }

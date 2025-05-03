@@ -8,20 +8,43 @@
 #include "triangulation.h"
 #include "chromosome.h"
 
+namespace fitness
+{
 
-class PixelFitness : public FitnessFunction {
-public:
-    PixelFitness(const cv::Mat& original_image);
+    std::vector<cv::Point> Chromosome2Points(const RealChromosome& g);
 
-    static std::vector<cv::Point> Chromosome2Points(const RealChromosome& g);
-    float eval(const RealChromosome& g);
+    // MSE
+    class MSE : public FitnessFunction {
+    public:
+        MSE(const cv::Mat& original_image, int mode);
+        float eval(const RealChromosome& g);
 
-private:
-    int width_;
-    int height_;
+    private:
+        triangulation::TriangulationImageBuilder builder_;
+    };
 
-    cv::Mat original_image_;
-    triangulation::TriangulationImageBuilder triangulation_image_builder_;
-};
+    // PSNR
+    class PSNR : public FitnessFunction {
+    public:
+        PSNR(const cv::Mat& original_image, int mode);
+        float CalPSNR(const RealChromosome& g);
+        float eval(const RealChromosome& g);
+
+    private:
+        MSE mse_fitness_function;
+    };
+
+    // SSIM
+    class SSIM : public FitnessFunction {
+    public:
+        SSIM(const cv::Mat& original_image, int mode);
+        float CalSSIM(const RealChromosome& g);
+        float eval(const RealChromosome& g);
+
+    private:
+        triangulation::TriangulationImageBuilder builder_;
+    };
+
+}
 
 #endif

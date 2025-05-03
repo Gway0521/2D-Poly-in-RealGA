@@ -17,6 +17,7 @@ RealGAOptions::RealGAOptions() {
     //CrossoverOpt
     crossoverType = BLX1P_CROSSOVER;
     crossoverindexA = -1;
+    BLX_alpha = 0.02;
 
     // MutationOpt
     mutationType = UNIFORM_MUTATION;

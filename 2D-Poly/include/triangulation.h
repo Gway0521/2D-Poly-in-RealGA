@@ -29,8 +29,7 @@ namespace triangulation
     {
     public:
         TriangulationImageBuilder();
-        TriangulationImageBuilder(int w, int h);
-        TriangulationImageBuilder(int w, int h, const std::vector<cv::Point> &points);
+        TriangulationImageBuilder(const cv::Mat& original_image, int mode = 3);
 
         // 跑一遍 Delaunay Triangulation，存在 triangles_
         void RunDelaunay(const std::vector<cv::Point> &points);
@@ -38,34 +37,37 @@ namespace triangulation
         // 畫出線圖，存在 line_image_
         void DrawLineImage();
         // 畫出上色圖，存在 colored_image_
+        void DrawColoredImage();
         void DrawColoredImage(const cv::Mat &orig_image, int mode);
         // 把 line_image_ 寫入檔案
-        void WriteLineImage(const std::string filename) const;
+        void WriteLineImage(const std::string &filename) const;
         // 把 colored_image_ 寫入檔案
-        void WriteColoredImage(const std::string filename) const;
-
-        // 計算 fitness
-        double ComputeFitness(const cv::Mat &orig_image) const;
+        void WriteColoredImage(const std::string &filename) const;
 
         int width() const { return width_; }
         int height() const { return height_; }
         const std::vector<cv::Point> &points() const { return points_; }
         const std::vector<Triangle> &triangles() const { return triangles_; }
-        const cv::Mat &line_image() const { return line_image_; }
-        const cv::Mat &colored_image() const { return colored_image_; }
+        const cv::Mat &line_image() const { CV_Assert(!line_image_.empty()); return line_image_; }
+        const cv::Mat &colored_image() const { CV_Assert(!colored_image_.empty()); return colored_image_; }
+        const cv::Mat &original_image() const { CV_Assert(!original_image_.empty()); return original_image_; }
 
+        void set_original_image(const cv::Mat& original_image) { original_image_ = original_image; }
         void set_width(int width) { width_ = width; }
         void set_height(int height) { height_ = height; }
+        void set_mode(int mode) { mode_ = mode; }
 
     private:
         int width_;
         int height_;
+        int mode_;
 
         std::vector<cv::Point> points_;
         std::vector<Triangle> triangles_;
 
         cv::Mat line_image_;
         cv::Mat colored_image_;
+        cv::Mat original_image_;
     };
 
 } // namespace triangulation

@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "realga.h"
+#include "fitness.h"
 #include "triangulation.h"
 #include "io.h"
 
@@ -15,14 +16,8 @@ namespace fs = std::filesystem;
 int main(int argc, char *argv[]) {
 
     // Process inputs
-    auto [exp_name, image_path, options, fitness_function] = SettingBuilder::input(argc, argv);
-
-    // Read image
-    cv::Mat original_image = cv::imread(image_path, cv::IMREAD_COLOR);
-    if (original_image.empty()) {
-        std::cerr << "Failed to open input file: " << image_path << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
+    auto [exp_name, image_path, builder, options, fitness_function] = SettingBuilder::input(argc, argv);
+    const int how_many_images_do_i_need_to_save = 100;
 
     // Make file for saving results
     std::string filename = exp_name + '/';
@@ -41,9 +36,6 @@ int main(int argc, char *argv[]) {
         std::cerr << "Failed to open output file!" << std::endl;
     }
 
-    // Init Triangulation Builder for making result
-    triangulation::TriangulationImageBuilder triangulation_image_builder(original_image.cols, original_image.rows);
-
     // Init Genetic Algorithm with options, fitness function and keepState=false
     RealGA ga;
     ga.init(options, fitness_function, false);
@@ -58,11 +50,13 @@ int main(int argc, char *argv[]) {
         ga.evolve();
 
         RealChromosome best = ga.getBestChromosome();
-        triangulation_image_builder.RunDelaunay(PixelFitness::Chromosome2Points(best));
-        triangulation_image_builder.DrawLineImage();
-        triangulation_image_builder.WriteLineImage(filename + "line_images/" + to_string(i+1) + "_" + to_string(best.fitness) + ".jpg");
-        triangulation_image_builder.DrawColoredImage(original_image, 3);
-        triangulation_image_builder.WriteColoredImage(filename + "colored_images/" + to_string(i+1) + "_" + to_string(best.fitness) + ".jpg");
+        builder.RunDelaunay(fitness::Chromosome2Points(best));
+        builder.DrawLineImage();
+        builder.DrawColoredImage();
+        if (i % (options.gen / how_many_images_do_i_need_to_save) == 0) {
+            builder.WriteLineImage(filename + "line_images/" + to_string(i + 1) + "_" + to_string(best.fitness) + ".jpg");
+            builder.WriteColoredImage(filename + "colored_images/" + to_string(i + 1) + "_" + to_string(best.fitness) + ".jpg");
+        }
 
         std::cout << "Best Fitness value = " << best.fitness << std::endl;
         std::cout << "---------------------------------------" << std::endl;

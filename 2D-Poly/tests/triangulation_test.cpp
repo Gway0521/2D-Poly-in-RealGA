@@ -6,6 +6,10 @@
 #include <iostream>
 #include <vector>
 
+#include "fitnessfunction.h"
+#include "fitness.h"
+
+
 int main()
 {
     // 檔案路徑
@@ -32,8 +36,19 @@ int main()
     cv::Mat resized;
     double scale = 0.5;
 
+    // 讀入圖片
+    cv::Mat orig_img = cv::imread(image_path, cv::IMREAD_COLOR);
+    std::cout << "orig_image size: " << orig_img.cols << " x " << orig_img.rows << std::endl;
+
+    if (orig_img.empty())
+    {
+        std::cerr << "Failed to open input file: " << image_path << std::endl;
+        return -1;
+    }
+
     // 執行 Delaunay 三角剖分
-    triangulation::TriangulationImageBuilder triangulation_image_builder(width, height, points);
+    triangulation::TriangulationImageBuilder triangulation_image_builder(orig_img, 2);
+    triangulation_image_builder.RunDelaunay(points);
 
     std::cout << "Number of points: " << triangulation_image_builder.points().size() << std::endl;
     std::cout << "Image width: " << triangulation_image_builder.width() << ", height: " << triangulation_image_builder.height() << std::endl;
@@ -45,15 +60,6 @@ int main()
     cv::imshow("LineImage01", resized);
     cv::waitKey(0);
 
-    cv::Mat orig_img = cv::imread(image_path, cv::IMREAD_COLOR);
-    std::cout << "orig_image size: " << orig_img.cols << " x " << orig_img.rows << std::endl;
-
-    if (orig_img.empty())
-    {
-        std::cerr << "Failed to open input file: " << image_path << std::endl;
-        return -1;
-    }
-
     // 上色
     triangulation_image_builder.DrawColoredImage(orig_img, 2);
     triangulation_image_builder.WriteColoredImage("ColoredImage01.jpg");
@@ -61,7 +67,24 @@ int main()
     cv::imshow("ColoredImage01", resized);
     cv::waitKey(0);
 
-    std::cout << "Fitness: " << triangulation_image_builder.ComputeFitness(orig_img) << std::endl;
+    // 計算 fitness
+    FitnessFunction* mse = new fitness::MSE(orig_img, 2);
+    FitnessFunction* psnr = new fitness::PSNR(orig_img, 2);
+    FitnessFunction* ssim = new fitness::SSIM(orig_img, 2);
+
+    RealChromosome chromosome;
+    for (auto point : points) {
+        chromosome.gene.push_back(point.x);
+        chromosome.gene.push_back(point.y);
+    }
+
+    std::cout << "MSE Fitness: " << mse->eval(chromosome) << std::endl;
+    std::cout << "PSNR Fitness: " << psnr->eval(chromosome) << std::endl;
+    std::cout << "SSIM Fitness: " << ssim->eval(chromosome) << std::endl;
+
+    delete mse;
+    delete psnr;
+    delete ssim;
 
     return 0;
 }

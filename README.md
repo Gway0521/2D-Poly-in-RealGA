@@ -53,6 +53,7 @@
    ./RealGA_test -image_path <path> -expName <name> [-numNodes <int>] [-nInitial <int>] [-gen <int>]
    [-selectionType <string>] [-tournamentSize <int>] [-tournamentProb <float>]
    [-crossoverType <string>] [-BLXAlpha <float>] [-mutationType <string>] [-mutationRate <float>]
+   [-colorMode <int>] [-fitnessFunction <string>]
    ```
 
 - 在執行 RealGA_test 時，有必要參數（必填）：\
@@ -67,6 +68,8 @@
   `-tournamentSize <int>`：tournament size（default：2）\
   `-tournamentProb <float>`：tournament probability（default：1）\
   `-crossoverType <string>`：crossover type（default：BLX1p）\
-  `-BLXAlpha <float>`：BLX alpha（default：0.1）\
+  `-BLXAlpha <float>`：BLX alpha（default：0.02）\
   `-mutationType <string>`：mutation type（default：uniform）\
-  `-mutationRate <float>`：mutation rate（default：0.0125）
+  `-mutationRate <float>`：mutation rate（default：0.0125）\
+  `-colorMode <int>`：color mode（default：3）\
+  `-fitnessFunction <string>`：fitness function（default：PSNR）

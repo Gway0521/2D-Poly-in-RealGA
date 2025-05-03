@@ -5,6 +5,7 @@
 #include <string>
 
 #include "options.h"
+#include "color.h"
 #include "fitnessfunction.h"
 #include "triangulation.h"
 
@@ -22,10 +23,6 @@ public:
         // for GA
         RealGAOptions options;
         FitnessFunction* fitness_function;
-
-        ~Ret() {
-            delete fitness_function;
-        }
     };
 
     static Ret input(int argc, char* argv[]);
@@ -38,7 +35,7 @@ public:
     static void print_settings(std::ostream& os, const RealGAOptions& options, const std::string& image_path);
 
 
-    static int mode_num;
+    static ColorFillMode mode_num;
     static string fitness_function_name;
 };
 

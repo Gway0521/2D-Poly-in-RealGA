@@ -9,9 +9,10 @@
 
 #include "options.h"
 #include "fitness.h"
+#include "color.h"
 #include "triangulation.h"
 
-int SettingBuilder::mode_num = 0;
+ColorFillMode SettingBuilder::mode_num = ColorFillMode::kMajority;
 std::string SettingBuilder::fitness_function_name = "";
 
 SettingBuilder::Ret SettingBuilder::input(int argc, char* argv[]) {
@@ -67,8 +68,8 @@ SettingBuilder::Ret SettingBuilder::input(int argc, char* argv[]) {
     std::vector<float> UB(ell);
     std::fill(LB.begin(), LB.end(), 0.0);
     for (int i = 0; i < ell; i += 2) {
-        UB[i] = static_cast<float>(original_image.cols);
-        UB[i + 1] = static_cast<float>(original_image.rows);
+        UB[i] = static_cast<float>(original_image.cols - 1);
+        UB[i + 1] = static_cast<float>(original_image.rows - 1);
     }
     ret.options.setBounds(LB, UB);
 
@@ -90,32 +91,41 @@ SettingBuilder::Ret SettingBuilder::input(int argc, char* argv[]) {
         else
             ret.options.setMutateDuplicatedFitness(true);
 
-    // color mode (default 3), fitness function (default PSNR) and builder
-    int mode = 3;
+    // color mode (default 2), fitness function (default PSNR) and builder
+    mode_num = ColorFillMode::kQuantizedMean;
+    std::unique_ptr<color::ColorFill> color_fill;
+
     if (args.count("-colorMode") != 0)
-        mode = std::stoi(args["-colorMode"]);
-    mode_num = mode;
+        mode_num = static_cast<ColorFillMode>(std::stoi(args["-colorMode"]));
+    if (mode_num == ColorFillMode::kMean)
+        color_fill = std::make_unique<color::MeanFill>();
+    else if (mode_num == ColorFillMode::kQuantizedMean)
+        color_fill = std::make_unique<color::QuantizedMeanFill>();
+    else if (mode_num == ColorFillMode::kMajority)
+        color_fill = std::make_unique<color::MajorityFill>();
+    else
+        color_fill = std::make_unique<color::BarycentricFill>();
 
     if (args.count("-fitnessFunction") != 0) {
         if (args["-fitnessFunction"] == "MSE") {
             fitness_function_name = "MSE";
-            ret.fitness_function = new fitness::MSE(original_image, mode);
+            ret.fitness_function = new fitness::MSE(original_image, color_fill->clone());
         }
         else if (args["-fitnessFunction"] == "SSIM") {
             fitness_function_name = "SSIM";
-            ret.fitness_function = new fitness::SSIM(original_image, mode);
+            ret.fitness_function = new fitness::SSIM(original_image, color_fill->clone());
         }
         else {
             fitness_function_name = "PSNR";
-            ret.fitness_function = new fitness::PSNR(original_image, mode);
+            ret.fitness_function = new fitness::PSNR(original_image, color_fill->clone());
         }
     }
     else {
         fitness_function_name = "PSNR";
-        ret.fitness_function = new fitness::PSNR(original_image, mode);
+        ret.fitness_function = new fitness::PSNR(original_image, color_fill->clone());
     }
         
-    ret.builder = triangulation::TriangulationImageBuilder(original_image, mode);
+    ret.builder = triangulation::TriangulationImageBuilder(original_image, move(color_fill));
 
     return ret;
 }
@@ -178,7 +188,16 @@ void SettingBuilder::print_settings(std::ostream& os, const RealGAOptions& optio
         output(os, "Mutation Gaussian Perc Min: ", options.mutationGaussianPercMin);
     }
 
-    output(os, "Mode: ", mode_num);
+    if (mode_num == ColorFillMode::kMean)
+        os << "Mode: Mean (1)\n";
+    else if (mode_num == ColorFillMode::kQuantizedMean)
+        os << "Mode: Quantized Mean (2)\n";
+    else if (mode_num == ColorFillMode::kMajority)
+        os << "Mode: Majority (3)\n";
+    else if (mode_num == ColorFillMode::kBarycentric)
+        os << "Mode: Barycentric (4)\n";
+    else
+        os << "Mode: Error\n";
     output(os, "Fitness Function: ", fitness_function_name);
     os << "---------------------------------------\n";
 }

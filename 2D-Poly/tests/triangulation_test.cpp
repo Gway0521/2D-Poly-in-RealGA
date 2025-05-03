@@ -8,6 +8,7 @@
 
 #include "fitnessfunction.h"
 #include "fitness.h"
+#include "color.h"
 
 
 int main()
@@ -47,7 +48,7 @@ int main()
     }
 
     // 執行 Delaunay 三角剖分
-    triangulation::TriangulationImageBuilder triangulation_image_builder(orig_img, 2);
+    triangulation::TriangulationImageBuilder triangulation_image_builder(orig_img, std::make_unique<color::QuantizedMeanFill>());
     triangulation_image_builder.RunDelaunay(points);
 
     std::cout << "Number of points: " << triangulation_image_builder.points().size() << std::endl;
@@ -61,16 +62,17 @@ int main()
     cv::waitKey(0);
 
     // 上色
-    triangulation_image_builder.DrawColoredImage(orig_img, 2);
+    unique_ptr<color::QuantizedMeanFill> umf = std::make_unique<color::QuantizedMeanFill>();
+    triangulation_image_builder.DrawColoredImage(orig_img, umf.get());
     triangulation_image_builder.WriteColoredImage("ColoredImage01.jpg");
     cv::resize(triangulation_image_builder.colored_image(), resized, cv::Size(), scale, scale);
     cv::imshow("ColoredImage01", resized);
     cv::waitKey(0);
 
     // 計算 fitness
-    FitnessFunction* mse = new fitness::MSE(orig_img, 2);
-    FitnessFunction* psnr = new fitness::PSNR(orig_img, 2);
-    FitnessFunction* ssim = new fitness::SSIM(orig_img, 2);
+    FitnessFunction* mse = new fitness::MSE(orig_img, std::make_unique<color::QuantizedMeanFill>());
+    FitnessFunction* psnr = new fitness::PSNR(orig_img, std::make_unique<color::QuantizedMeanFill>());
+    FitnessFunction* ssim = new fitness::SSIM(orig_img, std::make_unique<color::QuantizedMeanFill>());
 
     RealChromosome chromosome;
     for (auto point : points) {

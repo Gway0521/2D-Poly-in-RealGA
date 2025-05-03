@@ -10,6 +10,9 @@
 #include "triangulation.h"
 #include "io.h"
 
+#include <iostream>
+
+
 namespace fs = std::filesystem;
 
 

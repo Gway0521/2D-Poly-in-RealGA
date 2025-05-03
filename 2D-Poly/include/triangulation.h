@@ -3,16 +3,14 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "color.h"
+#include "geometry.h"
+
 #include <string>
 #include <vector>
 
 namespace triangulation
 {
-
-    struct Triangle
-    {
-        int a, b, c;
-    };
 
     struct Edge
     {
@@ -29,7 +27,7 @@ namespace triangulation
     {
     public:
         TriangulationImageBuilder();
-        TriangulationImageBuilder(const cv::Mat& original_image, int mode = 3);
+        TriangulationImageBuilder(const cv::Mat& original_image, std::unique_ptr<color::ColorFill> color_fill);
 
         // 跑一遍 Delaunay Triangulation，存在 triangles_
         void RunDelaunay(const std::vector<cv::Point> &points);
@@ -38,7 +36,7 @@ namespace triangulation
         void DrawLineImage();
         // 畫出上色圖，存在 colored_image_
         void DrawColoredImage();
-        void DrawColoredImage(const cv::Mat &orig_image, int mode);
+        void DrawColoredImage(const cv::Mat &orig_image, color::ColorFill* color_fill);
         // 把 line_image_ 寫入檔案
         void WriteLineImage(const std::string &filename) const;
         // 把 colored_image_ 寫入檔案
@@ -55,12 +53,13 @@ namespace triangulation
         void set_original_image(const cv::Mat& original_image) { original_image_ = original_image; }
         void set_width(int width) { width_ = width; }
         void set_height(int height) { height_ = height; }
-        void set_mode(int mode) { mode_ = mode; }
+        void set_color_fill(std::unique_ptr<color::ColorFill> color_fill) { color_fill_ = std::move(color_fill); }
 
     private:
         int width_;
         int height_;
-        int mode_;
+
+        std::unique_ptr<color::ColorFill> color_fill_;
 
         std::vector<cv::Point> points_;
         std::vector<Triangle> triangles_;

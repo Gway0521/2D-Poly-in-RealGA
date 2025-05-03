@@ -2,11 +2,15 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "color.h"
+#include "geometry.h"
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <cmath>
 #include <algorithm>
+
 
 namespace triangulation
 {
@@ -40,9 +44,9 @@ namespace triangulation
     }
 
     TriangulationImageBuilder::TriangulationImageBuilder() :
-        width_(-1), height_(-1), mode_(3) {}
-    TriangulationImageBuilder::TriangulationImageBuilder(const cv::Mat& original_image, int mode): 
-        original_image_(original_image), mode_(mode), width_(original_image.cols), height_(original_image.rows) {}
+        width_(-1), height_(-1), color_fill_(new color::BarycentricFill()) {}
+    TriangulationImageBuilder::TriangulationImageBuilder(const cv::Mat& original_image, std::unique_ptr<color::ColorFill> color_fill):
+        original_image_(original_image), color_fill_(std::move(color_fill)), width_(original_image.cols), height_(original_image.rows) {}
 
     // 使用 Bowyer–Watson 演算法構造 Delaunay 三角剖分
     // 傳入的 points 陣列會暫時加入超大三角形的頂點，供演算法使用。
@@ -189,141 +193,14 @@ namespace triangulation
     }
 
     void TriangulationImageBuilder::DrawColoredImage() { 
-        CV_Assert(!original_image_.empty());
-        DrawColoredImage(original_image_, mode_); 
+        DrawColoredImage(original_image_, color_fill_.get()); 
     }
 
-    void TriangulationImageBuilder::DrawColoredImage(const cv::Mat& orig_image, int mode)
+    void TriangulationImageBuilder::DrawColoredImage(const cv::Mat& orig_image, color::ColorFill* color_fill)
     {
         CV_Assert(!orig_image.empty());
 
-        // 準備 output 與 mask
-        colored_image_.create(height_, width_, CV_8UC3);
-        colored_image_.setTo(cv::Scalar(255, 255, 255));  // 白底
-        cv::Mat mask(height_, width_, CV_8UC1, cv::Scalar(0));
-
-        // 針對 mode 1，預先建立 5-bit histogram 與鍵集合
-        static std::vector<int> hist5bit(32 * 32 * 32);
-        std::vector<int> keys5bit;
-        keys5bit.reserve(1024);
-
-        // lambda for hash555
-        auto hash555 = [](const cv::Vec3b& px)->int {
-            return ((px[2] & 0xF8) >> 3) * 32 * 32
-                + ((px[1] & 0xF8) >> 3) * 32
-                + ((px[0] & 0xF8) >> 3);
-            };
-
-        // 遍歷所有三角形
-        for (const auto& tri : triangles_)
-        {
-            // 取出三個頂點，算出 bounding box
-            cv::Point pts[3] = {
-                points_[tri.a],
-                points_[tri.b],
-                points_[tri.c]
-            };
-            cv::Rect roi = cv::boundingRect(std::vector<cv::Point>(pts, pts + 3))
-                & cv::Rect(0, 0, width_, height_);
-
-            // 只在 ROI 內清除舊 mask、並填新三角形
-            auto maskROI = mask(roi);
-            maskROI.setTo(0);
-            cv::Point triROI[3] = {
-                pts[0] - roi.tl(),
-                pts[1] - roi.tl(),
-                pts[2] - roi.tl()
-            };
-            cv::fillConvexPoly(maskROI, triROI, 3, cv::Scalar(255), cv::LINE_AA);
-
-            // 根據 mode 統計顏色
-            cv::Scalar fill_color(0, 0, 0);
-            if (mode == 1)
-            {
-                // 重置 histogram（只清用到的）
-                for (int idx : keys5bit) hist5bit[idx] = 0;
-                keys5bit.clear();
-
-                int max_freq = 0, best_idx = 0;
-                for (int y = roi.y; y < roi.y + roi.height; ++y)
-                {
-                    const uchar* mrow = mask.ptr<uchar>(y) + roi.x;
-                    for (int x = roi.x; x < roi.x + roi.width; ++x, ++mrow)
-                    {
-                        if (!*mrow) continue;
-                        cv::Vec3b px = orig_image.at<cv::Vec3b>(y, x);
-                        int idx = hash555(px);
-                        if (hist5bit[idx]++ == 0) keys5bit.push_back(idx);
-                        if (hist5bit[idx] > max_freq) {
-                            max_freq = hist5bit[idx];
-                            best_idx = idx;
-                        }
-                    }
-                }
-                // 解出 r/g/b
-                uchar r5 = (best_idx / (32 * 32)) << 3;
-                uchar g5 = ((best_idx / 32) % 32) << 3;
-                uchar b5 = (best_idx % 32) << 3;
-                fill_color = cv::Scalar(b5, g5, r5);
-            }
-            else if (mode == 2)
-            {
-                // 24-bit 原色 histogram
-                static thread_local std::unordered_map<int, int> hist24bit;
-                hist24bit.clear();
-                hist24bit.reserve(roi.area() / 4);  // 估計大概大小
-                int max_freq = 0, best_key = 0;
-
-                for (int y = roi.y; y < roi.y + roi.height; ++y)
-                {
-                    const uchar* mrow = mask.ptr<uchar>(y) + roi.x;
-                    for (int x = roi.x; x < roi.x + roi.width; ++x, ++mrow)
-                    {
-                        if (!*mrow) continue;
-                        cv::Vec3b px = orig_image.at<cv::Vec3b>(y, x);
-                        int key = (px[2] << 16) | (px[1] << 8) | px[0];
-                        int freq = ++hist24bit[key];
-                        if (freq > max_freq) {
-                            max_freq = freq;
-                            best_key = key;
-                        }
-                    }
-                }
-                fill_color = cv::Scalar((best_key & 0xFF),
-                    (best_key >> 8) & 0xFF,
-                    (best_key >> 16) & 0xFF);
-            }
-            else  // mode 3
-            {
-                cv::Vec3d acc(0, 0, 0);
-                int cnt = 0;
-                for (int y = roi.y; y < roi.y + roi.height; ++y)
-                {
-                    const uchar* mrow = mask.ptr<uchar>(y) + roi.x;
-                    for (int x = roi.x; x < roi.x + roi.width; ++x, ++mrow)
-                    {
-                        if (!*mrow) continue;
-                        cv::Vec3b px = orig_image.at<cv::Vec3b>(y, x);
-                        acc += px;
-                        ++cnt;
-                    }
-                }
-                if (cnt > 0) {
-                    acc /= cnt;
-                    fill_color = cv::Scalar((uchar)acc[0],
-                        (uchar)acc[1],
-                        (uchar)acc[2]);
-                }
-            }
-
-            // 在 output 圖上填色
-            cv::fillConvexPoly(
-                colored_image_,
-                pts, 3,
-                fill_color,
-                cv::LINE_AA
-            );
-        }
+        colored_image_ = color_fill->Draw(orig_image, triangles_, points_);
     };
 
     void TriangulationImageBuilder::WriteLineImage(const std::string& filename) const

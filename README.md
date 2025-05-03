@@ -71,5 +71,5 @@
   `-BLXAlpha <float>`：BLX alpha（default：0.02）\
   `-mutationType <string>`：mutation type（default：uniform）\
   `-mutationRate <float>`：mutation rate（default：0.0125）\
-  `-colorMode <int>`：color mode（default：3）\
+  `-colorMode <int>`：color mode（default：2 (Quantized Mean)）\
   `-fitnessFunction <string>`：fitness function（default：PSNR）

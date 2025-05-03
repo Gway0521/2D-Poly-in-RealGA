@@ -21,16 +21,15 @@ namespace fitness
         return points;
     }
 
-    MSE::MSE(const cv::Mat& original_image, int mode) : builder_(triangulation::TriangulationImageBuilder(original_image, mode)) {}
-    PSNR::PSNR(const cv::Mat& original_image, int mode) : mse_fitness_function(MSE(original_image, mode)) {}
-    SSIM::SSIM(const cv::Mat& original_image, int mode) : builder_(triangulation::TriangulationImageBuilder(original_image, mode)) {}
+    MSE::MSE(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : builder_(triangulation::TriangulationImageBuilder(original_image, move(color_fill))) {}
+    PSNR::PSNR(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : mse_fitness_function(MSE(original_image, move(color_fill))) {}
+    SSIM::SSIM(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : builder_(triangulation::TriangulationImageBuilder(original_image, move(color_fill))) {}
 
     // MSE
     float MSE::eval(const RealChromosome& g) {
 
         // Draw Delaunay Triangulation
         std::vector<cv::Point> points = Chromosome2Points(g);
-
         builder_.RunDelaunay(points);
         builder_.DrawColoredImage();
 
@@ -50,7 +49,7 @@ namespace fitness
 
         // Average
         mse /= (builder_.original_image().total() * builder_.original_image().channels());
-
+        
         return mse;
     }
 

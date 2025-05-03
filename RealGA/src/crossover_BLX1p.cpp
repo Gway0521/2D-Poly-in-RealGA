@@ -53,8 +53,8 @@ void BLX1pCrossover::crossover(RealChromosome& a, RealChromosome& b, RealChromos
         offspring.gene[i * 2 + 1] = offspring.gene[i * 2 + 1] + Stat::randUniform(-1 * mBLX_alpha, mBLX_alpha) * std::abs(vec_a[i].second - vec_b[i].second);
 
         offspring.gene[i * 2] = (offspring.gene[i * 2] < 0) ? 0 : offspring.gene[i * 2];
-        offspring.gene[i * 2] = (offspring.gene[i * 2] > 1200) ? 1200 : offspring.gene[i * 2];
+        offspring.gene[i * 2] = (offspring.gene[i * 2] > 1199) ? 1199 : offspring.gene[i * 2];
         offspring.gene[i * 2 + 1] = (offspring.gene[i * 2 + 1] < 0) ? 0 : offspring.gene[i * 2 + 1];
-        offspring.gene[i * 2 + 1] = (offspring.gene[i * 2 + 1] > 1200) ? 1200 : offspring.gene[i * 2 + 1];
+        offspring.gene[i * 2 + 1] = (offspring.gene[i * 2 + 1] > 1199) ? 1199 : offspring.gene[i * 2 + 1];
     }
 }

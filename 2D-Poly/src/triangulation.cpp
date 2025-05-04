@@ -10,6 +10,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <fstream>
 
 
 namespace triangulation
@@ -45,6 +46,8 @@ namespace triangulation
 
     TriangulationImageBuilder::TriangulationImageBuilder() :
         width_(-1), height_(-1), color_fill_(new color::BarycentricFill()) {}
+    TriangulationImageBuilder::TriangulationImageBuilder(std::unique_ptr<color::ColorFill> color_fill) :
+        width_(-1), height_(-1), color_fill_(std::move(color_fill)) {}
     TriangulationImageBuilder::TriangulationImageBuilder(const cv::Mat& original_image, std::unique_ptr<color::ColorFill> color_fill):
         original_image_(original_image), color_fill_(std::move(color_fill)), width_(original_image.cols), height_(original_image.rows) {}
 
@@ -213,6 +216,91 @@ namespace triangulation
     {
         CV_Assert(!colored_image_.empty());
         cv::imwrite(filename, this->colored_image_);
+    }
+
+    int TriangulationImageBuilder::Encode(const std::string& filename)
+    {
+        CV_Assert(!original_image_.empty());
+        std::vector<cv::Vec3b> encoded_colors = color_fill_->EncodeColor(original_image_, triangles_, points_);
+
+        std::ofstream ofs(filename, std::ios::binary);
+        if (!ofs.is_open()) {
+            std::cerr << "Failed to open file for writing: " << filename << std::endl;
+            return -1;
+        }
+
+        // 把圖片 height, width 寫入檔案
+        ofs.write(reinterpret_cast<const char*>(&height_), sizeof(int32_t));
+        ofs.write(reinterpret_cast<const char*>(&width_), sizeof(int32_t));
+
+        // 把 points 寫入檔案
+        int32_t num_points = static_cast<int32_t>(points_.size());
+        ofs.write(reinterpret_cast<const char*>(&num_points), sizeof(int32_t));
+        for (const auto& pt : points_) {
+            int32_t x = pt.x;
+            int32_t y = pt.y;
+            ofs.write(reinterpret_cast<const char*>(&x), sizeof(int32_t));
+            ofs.write(reinterpret_cast<const char*>(&y), sizeof(int32_t));
+        }
+
+        // 把 colors 寫入檔案
+        int32_t num_colors = static_cast<int32_t>(encoded_colors.size());
+        ofs.write(reinterpret_cast<const char*>(&num_colors), sizeof(int32_t));
+        for (const auto& color : encoded_colors) {
+            ofs.write(reinterpret_cast<const char*>(&color[0]), sizeof(uchar));  // B
+            ofs.write(reinterpret_cast<const char*>(&color[1]), sizeof(uchar));  // G
+            ofs.write(reinterpret_cast<const char*>(&color[2]), sizeof(uchar));  // R
+        }
+
+        ofs.close();
+
+        // 回傳檔案大小
+        std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
+        return static_cast<int>(ifs.tellg());
+    }
+
+    int TriangulationImageBuilder::Encode(const std::vector<cv::Point>& points, const cv::Mat& orig_image, std::unique_ptr<color::ColorFill> color_fill, const std::string& filename)
+    {
+        CV_Assert(!orig_image.empty());
+        original_image_ = orig_image;
+        color_fill_ = std::move(color_fill);
+
+        RunDelaunay(points);
+        return Encode(filename);
+    }
+
+    int TriangulationImageBuilder::Decode(const std::string& filename)
+    {
+        std::ifstream ifs(filename, std::ios::binary | std::ios::ate);
+        if (!ifs.is_open()) {
+            std::cerr << "Failed to open file for reading: " << filename << std::endl;
+            return -1;
+        }
+
+        std::streamsize file_size = ifs.tellg();
+        ifs.seekg(0, std::ios::beg);
+
+        // 讀取 height, width
+        ifs.read(reinterpret_cast<char*>(&height_), sizeof(int32_t));
+        ifs.read(reinterpret_cast<char*>(&width_), sizeof(int32_t));
+
+        // 把 points 讀入
+        int32_t num_points = 0;
+        ifs.read(reinterpret_cast<char*>(&num_points), sizeof(int32_t));
+        points_.resize(num_points);
+        ifs.read(reinterpret_cast<char*>(points_.data()), num_points * sizeof(cv::Point));
+
+        // 把 colors 讀入
+        int32_t num_colors = 0;
+        ifs.read(reinterpret_cast<char*>(&num_colors), sizeof(int32_t));
+        std::vector<cv::Vec3b> colors(num_colors);
+        ifs.read(reinterpret_cast<char*>(colors.data()), num_points * sizeof(cv::Vec3b));
+
+        RunDelaunay(points_);
+        colored_image_ = color_fill_->Draw(height_, width_, colors, triangles_, points_);
+
+        // 回傳檔案大小
+        return static_cast<int>(file_size);
     }
 
 } // namespace triangulation

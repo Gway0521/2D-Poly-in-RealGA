@@ -5,6 +5,7 @@
 
 #include "geometry.h"
 
+#include <vector>
 #include <memory>
 
 
@@ -22,6 +23,8 @@ namespace color
     class ColorFill {
     public:
         virtual cv::Mat Draw(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const = 0;
+        virtual cv::Mat Draw(int height, int width, const std::vector<cv::Vec3b>& colors, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const = 0;
+        virtual std::vector<cv::Vec3b> EncodeColor(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const = 0;
         virtual std::unique_ptr<ColorFill> clone() const = 0;
         virtual ~ColorFill() = default;
     };
@@ -32,6 +35,8 @@ namespace color
         BarycentricFill() {}
         std::unique_ptr<ColorFill> clone() const;
         cv::Mat Draw(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+        cv::Mat Draw(int height, int width, const std::vector<cv::Vec3b>& colors, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+        std::vector<cv::Vec3b> EncodeColor(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
     };
 
     // 眾數
@@ -40,6 +45,8 @@ namespace color
         MajorityFill() {}
         std::unique_ptr<ColorFill> clone() const;
         cv::Mat Draw(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+        cv::Mat Draw(int height, int width, const std::vector<cv::Vec3b>& colors, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+        std::vector<cv::Vec3b> EncodeColor(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
     };
 
     // 平均數
@@ -48,6 +55,8 @@ namespace color
         MeanFill() {}
         std::unique_ptr<ColorFill> clone() const;
         cv::Mat Draw(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+        cv::Mat Draw(int height, int width, const std::vector<cv::Vec3b>& colors, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+        std::vector<cv::Vec3b> EncodeColor(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
     };
 
     // 平均數量化
@@ -56,6 +65,8 @@ namespace color
         QuantizedMeanFill() {}
         std::unique_ptr<ColorFill> clone() const;
         cv::Mat Draw(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+        cv::Mat Draw(int height, int width, const std::vector<cv::Vec3b>& colors, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+        std::vector<cv::Vec3b> EncodeColor(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
     };
 
 }

@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
     fs::create_directories(filename);
     fs::create_directories(filename + "line_images/");
     fs::create_directories(filename + "colored_images/");
+    fs::create_directories(filename + "compressed_images/");
 
     // Print and write settings
     SettingBuilder::print_settings(std::cout, parsed_settings);
@@ -63,6 +64,8 @@ int main(int argc, char *argv[]) {
         if (i % save_interval == 0) {
             builder.WriteLineImage(filename + "line_images/" + to_string(i + 1) + "_" + to_string(best.fitness) + ".jpg");
             builder.WriteColoredImage(filename + "colored_images/" + to_string(i + 1) + "_" + to_string(best.fitness) + ".jpg");
+            int file_size = builder.Encode(filename + "compressed_images/" + to_string(i + 1) + "_" + to_string(best.fitness) + ".gaimg");
+            std::cout << "File size: " << file_size << " bytes" << std::endl;
         }
 
         std::cout << "Best Fitness value = " << best.fitness << std::endl;
@@ -71,9 +74,18 @@ int main(int argc, char *argv[]) {
     // get the best score function (the minimum)
     RealChromosome best = ga.getBestChromosome();
 
-    // Print results
+    // encode, decode, and print results
+    builder.RunDelaunay(fitness::Chromosome2Points(best));
+    builder.DrawLineImage();
+    builder.DrawColoredImage();
+    builder.Encode(filename + "compressed_images/" "best_" + to_string(best.fitness) + ".gaimg");
+    int file_size = builder.Decode(filename + "compressed_images/" "best_" + to_string(best.fitness) + ".gaimg");
+
     cout << "Best solution: " << best.toString() << endl;
     cout << "Best Fitness value = " << best.fitness << endl;
+    std::cout << "File size: " << file_size << " bytes" << std::endl;
+    cv::imshow("Decoded Image", builder.colored_image());
+    cv::waitKey(0);
 
     return 0;
 }

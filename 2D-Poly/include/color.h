@@ -5,6 +5,8 @@
 
 #include "geometry.h"
 
+#include <memory>
+
 
 enum class ColorFillMode {
     kMean = 1,              // 平均數
@@ -12,6 +14,7 @@ enum class ColorFillMode {
     kMajority,              // 眾數
     kBarycentric            // 線性插值
 };
+std::string ToString(ColorFillMode mode);
 
 namespace color
 {

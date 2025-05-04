@@ -1,12 +1,21 @@
 #include "fitness.h"
 
-#include <vector>
 #include <opencv2/opencv.hpp>
-#include <iostream>
 
 #include "chromosome.h"
 #include "triangulation.h"
 
+#include <vector>
+#include <memory>
+#include <iostream>
+
+
+std::string ToString(FitnessMode mode) {
+    if (mode == FitnessMode::kMSE) return "MSE (mode 1)";
+    else if (mode == FitnessMode::kPSNR) return "PSNR (mode 2)";
+    else if (mode == FitnessMode::kSSIM) return "SSIM (mode 3)";
+    else return "Unknown (Unknown mode)";
+}
 
 namespace fitness
 {
@@ -22,7 +31,7 @@ namespace fitness
     }
 
     MSE::MSE(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : builder_(triangulation::TriangulationImageBuilder(original_image, move(color_fill))) {}
-    PSNR::PSNR(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : mse_fitness_function(MSE(original_image, move(color_fill))) {}
+    PSNR::PSNR(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : mse_fitness_function_(MSE(original_image, move(color_fill))) {}
     SSIM::SSIM(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : builder_(triangulation::TriangulationImageBuilder(original_image, move(color_fill))) {}
 
     // MSE
@@ -57,7 +66,7 @@ namespace fitness
     float PSNR::CalPSNR(const RealChromosome& g) {
 
         // MSE
-        float mse = mse_fitness_function.eval(g);
+        float mse = mse_fitness_function_.eval(g);
         if (mse <= 0.0f) {
             return std::numeric_limits<float>::infinity();
         }

@@ -1,14 +1,23 @@
 #ifndef FITNESS_H_
 #define FITNESS_H_
 
-#include <vector>
-#include <opencv2/opencv.hpp>
-
 #include "fitnessfunction.h"
 #include "triangulation.h"
-#include "chromosome.h"
-#include "color.h"
 
+#include <vector>
+#include <memory>
+
+
+namespace cv { class Mat; }
+namespace color { class ColorFill; }
+class  RealChromosome;
+
+enum class FitnessMode {
+    kMSE = 1,
+    kPSNR,
+    kSSIM,
+};
+std::string ToString(FitnessMode mode);
 
 namespace fitness
 {
@@ -18,7 +27,7 @@ namespace fitness
     // MSE
     class MSE : public FitnessFunction {
     public:
-        MSE(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill);
+        MSE(const cv::Mat& original_image, std::unique_ptr<color::ColorFill> color_fill);
         float eval(const RealChromosome& g);
 
     private:
@@ -28,18 +37,18 @@ namespace fitness
     // PSNR
     class PSNR : public FitnessFunction {
     public:
-        PSNR(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill);
+        PSNR(const cv::Mat& original_image, std::unique_ptr<color::ColorFill> color_fill);
         float CalPSNR(const RealChromosome& g);
         float eval(const RealChromosome& g);
 
     private:
-        MSE mse_fitness_function;
+        MSE mse_fitness_function_;
     };
 
     // SSIM
     class SSIM : public FitnessFunction {
     public:
-        SSIM(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill);
+        SSIM(const cv::Mat& original_image, std::unique_ptr<color::ColorFill> color_fill);
         float CalSSIM(const RealChromosome& g);
         float eval(const RealChromosome& g);
 

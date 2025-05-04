@@ -1,42 +1,46 @@
 #ifndef IO_H_
 #define IO_H_
 
-#include <iostream>
-#include <string>
-
-#include "options.h"
 #include "color.h"
-#include "fitnessfunction.h"
+#include "options.h"
+#include "fitness.h"
 #include "triangulation.h"
 
+#include <iostream>
+#include <string>
+#include <memory>
+
+
+class FitnessFunction;
 
 class SettingBuilder {
 public:
-    struct Ret {
+    struct ParsedSettings {
         // for filename
-        string exp_name;
+        std::string exp_name;
 
         // for 2D-poly
-        string image_path;
+        std::string image_path;
         triangulation::TriangulationImageBuilder builder;
 
         // for GA
+        ColorFillMode color_mode;
+        FitnessMode fitness_mode;
         RealGAOptions options;
-        FitnessFunction* fitness_function;
+        std::unique_ptr<FitnessFunction> fitness_function;
     };
 
-    static Ret input(int argc, char* argv[]);
+    // 處理輸入
+    static ParsedSettings input(int argc, char* argv[]);
 
+    // 輸出格式
     static void output(std::ostream& os, const std::string& label, const std::string& value);
     static void output(std::ostream& os, const std::string& label, int value);
     static void output(std::ostream& os, const std::string& label, unsigned long long value);
     static void output(std::ostream& os, const std::string& label, float value);
 
-    static void print_settings(std::ostream& os, const RealGAOptions& options, const std::string& image_path);
-
-
-    static ColorFillMode mode_num;
-    static string fitness_function_name;
+    // 輸出設定
+    static void print_settings(std::ostream& os, const ParsedSettings& parsed_settings);
 };
 
 #endif

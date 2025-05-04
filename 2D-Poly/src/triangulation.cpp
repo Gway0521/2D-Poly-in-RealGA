@@ -15,20 +15,20 @@
 namespace triangulation
 {
 
-    bool Edge::operator==(const Edge &e) const
+    bool TriangulationImageBuilder::Edge::operator==(const Edge &e) const
     {
         return (a == e.a && b == e.b) || (a == e.b && b == e.a);
     }
 
     // 計算三個點的有向面積（正值表示逆時針排列
-    double ComputeDirectedArea(const cv::Point &a, const cv::Point &b, const cv::Point &c)
+    double TriangulationImageBuilder::ComputeDirectedArea(const cv::Point &a, const cv::Point &b, const cv::Point &c)
     {
         return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
     }
 
     // 判斷點 p 是否在由 (a, b, c) 構成三角形的外接圓內
     // 此函式要求 a, b, c 為逆時針排列，則 determinant > 0 表示 p 落在外接圓內
-    bool IsInCircumcircle(const cv::Point &p, const cv::Point &a, const cv::Point &b, const cv::Point &c)
+    bool TriangulationImageBuilder::IsInCircumcircle(const cv::Point &p, const cv::Point &a, const cv::Point &b, const cv::Point &c)
     {
         double ax = a.x - p.x;
         double ay = a.y - p.y;
@@ -49,8 +49,8 @@ namespace triangulation
         original_image_(original_image), color_fill_(std::move(color_fill)), width_(original_image.cols), height_(original_image.rows) {}
 
     // 使用 Bowyer–Watson 演算法構造 Delaunay 三角剖分
-    // 傳入的 points 陣列會暫時加入超大三角形的頂點，供演算法使用。
-    // 為避免在最後輸出結果時混淆，我們約定原始點數為 original_n，超大三角形的頂點索引皆大於等於 original_n。
+    // 傳入的 points 陣列會暫時加入超大三角形的頂點，供演算法使用
+    // 為避免在最後輸出結果時混淆，我們約定原始點數為 original_n，超大三角形的頂點索引皆大於等於 original_n
     void TriangulationImageBuilder::RunDelaunay(const std::vector<cv::Point> &points)
     {
         points_ = points;
@@ -201,18 +201,18 @@ namespace triangulation
         CV_Assert(!orig_image.empty());
 
         colored_image_ = color_fill->Draw(orig_image, triangles_, points_);
-    };
+    }
 
     void TriangulationImageBuilder::WriteLineImage(const std::string& filename) const
     {
         CV_Assert(!line_image_.empty());
         cv::imwrite(filename, this->line_image_);
-    };
+    }
 
     void TriangulationImageBuilder::WriteColoredImage(const std::string& filename) const
     {
         CV_Assert(!colored_image_.empty());
         cv::imwrite(filename, this->colored_image_);
-    };
+    }
 
 } // namespace triangulation

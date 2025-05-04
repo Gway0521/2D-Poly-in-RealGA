@@ -4,12 +4,20 @@
 
 #include "geometry.h"
 
-#include <iostream>
+#include <memory>
 #include <vector>
 #include <cmath>
 #include <algorithm>
 #include <unordered_map>
 
+
+std::string ToString(ColorFillMode mode) {
+    if (mode == ColorFillMode::kMean) return "Mean (mode 1)";
+    else if (mode == ColorFillMode::kQuantizedMean) return "Quantized Mean (mode 2)";
+    else if (mode == ColorFillMode::kMajority) return "Majority (mode 3)";
+    else if (mode == ColorFillMode::kBarycentric) return "Barycentric (mode 4)";
+    else return "Unknown (Unknown mode)";
+}
 
 namespace color
 {

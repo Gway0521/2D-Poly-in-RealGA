@@ -1,8 +1,3 @@
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <filesystem>
-
 #include <opencv2/opencv.hpp>
 
 #include "realga.h"
@@ -11,6 +6,9 @@
 #include "io.h"
 
 #include <iostream>
+#include <string>
+#include <fstream>
+#include <filesystem>
 
 
 namespace fs = std::filesystem;
@@ -19,8 +17,14 @@ namespace fs = std::filesystem;
 int main(int argc, char *argv[]) {
 
     // Process inputs
-    auto [exp_name, image_path, builder, options, fitness_function] = SettingBuilder::input(argc, argv);
-    const int how_many_images_do_i_need_to_save = 100;
+    SettingBuilder::ParsedSettings parsed_settings = SettingBuilder::input(argc, argv);
+    const std::string& exp_name = parsed_settings.exp_name;
+    RealGAOptions& options = parsed_settings.options;
+    FitnessFunction* fitness_function = parsed_settings.fitness_function.get();
+    triangulation::TriangulationImageBuilder& builder = parsed_settings.builder;
+
+    const int kNumImagesToSave = 100;
+    int save_interval = std::max(1, static_cast<int>(options.gen) / kNumImagesToSave);
 
     // Make file for saving results
     std::string filename = exp_name + '/';
@@ -29,10 +33,10 @@ int main(int argc, char *argv[]) {
     fs::create_directories(filename + "colored_images/");
 
     // Print and write settings
-    SettingBuilder::print_settings(std::cout, options, image_path);
+    SettingBuilder::print_settings(std::cout, parsed_settings);
     std::ofstream fout(filename + "setting.txt");
     if (fout.is_open()) {
-        SettingBuilder::print_settings(fout, options, image_path);
+        SettingBuilder::print_settings(fout, parsed_settings);
         fout.close();
     }
     else {
@@ -56,7 +60,7 @@ int main(int argc, char *argv[]) {
         builder.RunDelaunay(fitness::Chromosome2Points(best));
         builder.DrawLineImage();
         builder.DrawColoredImage();
-        if (i % (options.gen / how_many_images_do_i_need_to_save) == 0) {
+        if (i % save_interval == 0) {
             builder.WriteLineImage(filename + "line_images/" + to_string(i + 1) + "_" + to_string(best.fitness) + ".jpg");
             builder.WriteColoredImage(filename + "colored_images/" + to_string(i + 1) + "_" + to_string(best.fitness) + ".jpg");
         }
@@ -71,6 +75,5 @@ int main(int argc, char *argv[]) {
     cout << "Best solution: " << best.toString() << endl;
     cout << "Best Fitness value = " << best.fitness << endl;
 
-    delete fitness_function;
     return 0;
 }

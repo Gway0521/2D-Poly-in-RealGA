@@ -8,23 +8,25 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+
 
 namespace triangulation
 {
 
-    struct Edge
-    {
-        int a, b;
-
-        bool operator==(const Edge &e) const;
-    };
-
-    double ComputeDirectedArea(const cv::Point &a, const cv::Point &b, const cv::Point &c);
-    bool IsInCircumcircle(const cv::Point &p, const cv::Point &a, const cv::Point &b, const cv::Point &c);
-
-    // 一組 Delaunay Triangulation 結果
+    // 做 Delaunay Triangulation + 上色
     class TriangulationImageBuilder
     {
+    private:
+        struct Edge
+        {
+            int a, b;
+
+            bool operator==(const Edge& e) const;
+        };
+        static double ComputeDirectedArea(const cv::Point& a, const cv::Point& b, const cv::Point& c);
+        static bool IsInCircumcircle(const cv::Point& p, const cv::Point& a, const cv::Point& b, const cv::Point& c);
+
     public:
         TriangulationImageBuilder();
         TriangulationImageBuilder(const cv::Mat& original_image, std::unique_ptr<color::ColorFill> color_fill);

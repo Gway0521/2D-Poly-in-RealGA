@@ -294,7 +294,7 @@ namespace triangulation
         int32_t num_colors = 0;
         ifs.read(reinterpret_cast<char*>(&num_colors), sizeof(int32_t));
         std::vector<cv::Vec3b> colors(num_colors);
-        ifs.read(reinterpret_cast<char*>(colors.data()), num_points * sizeof(cv::Vec3b));
+        ifs.read(reinterpret_cast<char*>(colors.data()), num_colors * sizeof(cv::Vec3b));
 
         RunDelaunay(points_);
         colored_image_ = color_fill_->Draw(height_, width_, colors, triangles_, points_);

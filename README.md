@@ -52,7 +52,8 @@
 
    ./RealGA_test -image_path <path> -expName <name> [-numNodes <int>] [-nInitial <int>] [-gen <int>]
    [-selectionType <string>] [-tournamentSize <int>] [-tournamentProb <float>]
-   [-crossoverType <string>] [-BLXAlpha <float>] [-mutationType <string>] [-mutationRate <float>]
+   [-crossoverType <string>] [-BLXAlpha <float>]
+   [-mutationType <string>] [-mutationRate <float>] [-mutationUniformPerc <float>] [-mutateDuplicatedFitness <bool>]
    [-colorMode <int>] [-fitnessFunction <string>]
    ```
 
@@ -71,5 +72,7 @@
   `-BLXAlpha <float>`：BLX alpha（default：0.02）\
   `-mutationType <string>`：mutation type（default：uniform）\
   `-mutationRate <float>`：mutation rate（default：0.0125）\
+  `-mutationUniformPerc <float>`：mutation 的震盪幅度係數（default：0.25）\
+  `-mutateDuplicatedFitness <bool>`：出現重複 fitness 的 chromosome 需不需要再 mutate 一遍（default：true）\
   `-colorMode <int>`：color mode（default：2 (Quantized Mean)）\
   `-fitnessFunction <string>`：fitness function（default：PSNR）

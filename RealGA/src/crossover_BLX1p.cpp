@@ -22,10 +22,10 @@ void BLX1pCrossover::crossover(RealChromosome& a, RealChromosome& b, RealChromos
     std::vector<std::pair<float, float>> vec_b(num_nodes);
 
     for (int i = 0; i < num_nodes; ++i) {
-        vec_a[i].first = a.gene[i*2];
-        vec_a[i].second = a.gene[i*2+1];
-        vec_b[i].first = b.gene[i*2];
-        vec_b[i].second = b.gene[i*2+1];
+        vec_a[i].first = a.gene[i * 2];
+        vec_a[i].second = a.gene[i * 2 + 1];
+        vec_b[i].first = b.gene[i * 2];
+        vec_b[i].second = b.gene[i * 2 + 1];
     }
 
     std::sort(vec_a.begin(), vec_a.end(), [](pair<float, float> i, pair<float, float> j) {

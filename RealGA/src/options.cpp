@@ -143,6 +143,7 @@ void RealGAOptions::setSinglePointCrossoverIndex(int value) {
 }
 
 void RealGAOptions::setBLX_alpha(float value) {
+    REALGA_ERROR(value < 0, "BLX Alpha must be >= 0");
     BLX_alpha = value;
 }
 

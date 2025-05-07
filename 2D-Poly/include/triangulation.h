@@ -53,6 +53,7 @@ namespace triangulation
 
         int width() const { return width_; }
         int height() const { return height_; }
+        std::unique_ptr<color::ColorFill> clone_color_fill() const { return color_fill_->clone(); }
         const std::vector<cv::Point> &points() const { return points_; }
         const std::vector<Triangle> &triangles() const { return triangles_; }
         const cv::Mat &line_image() const { CV_Assert(!line_image_.empty()); return line_image_; }

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <unordered_set>
 #include <unordered_map>
 #include <string>
 
@@ -15,21 +16,36 @@
 
 
 SettingBuilder::ParsedSettings SettingBuilder::input(int argc, char* argv[]) {
-    if (argc % 2 == 0 || std::string(argv[1]) == "-help") {
-        std::cerr << "Usage: RealGA_test -imagePath <string> -expName <string> "
-            << "[-numNodes <int>] [-nInitial <int>] [-gen <int>] "
-            << "[-selectionType <string>] [-tournamentSize <int>] [-tournamentProb <float>] "
-            << "[-crossoverType <string>] [-BLXAlpha <float>] "
-            << "[-mutationType <string>] [-mutationRate <float>] [-mutateDuplicatedFitness <bool>] "
-            << "[-colorMode <int>] [-fitnessFunction <string>]"
+    if (argc == 1 || argc % 2 == 0 || std::string(argv[1]) == "-help") {
+        std::cerr << "Usage: RealGA_test -imagePath <string> -expName <string>\n"
+            << "[-numNodes <int>] [-nInitial <int>] [-gen <int>]\n"
+            << "[-selectionType <string>] [-tournamentSize <int>] [-tournamentProb <float>]\n"
+            << "[-crossoverType <string>] [-BLXAlpha <float>]\n"
+            << "[-mutationType <string>] [-mutationRate <float>] [-mutationUniformPerc <float>] [-mutateDuplicatedFitness <bool>]\n"
+            << "[-colorMode <int>] [-fitnessFunction <string>]\n"
             << std::endl;
         std::exit(EXIT_FAILURE);
     }
-    
-    std::unordered_map<std::string, std::string> args;
-    for (int i = 1; i < argc; i += 2)
-        args[argv[i]] = argv[i + 1];
 
+    // store input
+    static std::unordered_map<std::string, std::string> args;
+
+    // check input key
+    const std::unordered_set<std::string> validKeys = {
+        "-imagePath", "-expName", "-numNodes", "-nInitial", "-gen",
+        "-selectionType", "-tournamentSize", "-tournamentProb",
+        "-crossoverType", "-BLXAlpha",
+        "-mutationType", "-mutationRate", "-mutationUniformPerc", "-mutateDuplicatedFitness",
+        "-colorMode", "-fitnessFunction"
+    };
+    for (int i = 1; i < argc; i += 2) {
+        if (validKeys.count(std::string(argv[i])) > 0)
+            args[argv[i]] = argv[i + 1];
+        else {
+            std::cerr << argv[i] << " is an invalid input key" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+    }
 
     ParsedSettings parsed_settings;
 
@@ -84,6 +100,7 @@ SettingBuilder::ParsedSettings SettingBuilder::input(int argc, char* argv[]) {
     // mutation
     if (args.count("-mutationType") != 0) parsed_settings.options.setMutationType(args["-mutationType"]);
     if (args.count("-mutationRate") != 0) parsed_settings.options.setMutationRate(std::stof(args["-mutationRate"]));
+    if (args.count("-mutationUniformPerc") != 0) parsed_settings.options.setUniformMutationRate(std::stof(args["-mutationUniformPerc"]));
     if (args.count("-mutateDuplicatedFitness") != 0)
         if (args["-mutateDuplicatedFitness"] == "false" || args["-mutateDuplicatedFitness"] == "False" || args["-mutateDuplicatedFitness"] == "0")
             parsed_settings.options.setMutateDuplicatedFitness(false);
@@ -132,15 +149,12 @@ SettingBuilder::ParsedSettings SettingBuilder::input(int argc, char* argv[]) {
 void SettingBuilder::output(std::ostream& os, const std::string& label, const std::string& value) {
     os << std::left << std::setw(40) << label << value << '\n';
 }
-
 void SettingBuilder::output(std::ostream& os, const std::string& label, int value) {
     os << std::left << std::setw(40) << label << value << '\n';
 }
-
 void SettingBuilder::output(std::ostream& os, const std::string& label, unsigned long long value) {
     os << std::left << std::setw(40) << label << value << '\n';
 }
-
 void SettingBuilder::output(std::ostream& os, const std::string& label, float value) {
     os << std::left << std::setw(40) << label << value << '\n';
 }
@@ -194,5 +208,15 @@ void SettingBuilder::print_settings(std::ostream& os, const ParsedSettings& pars
 
     output(os, "Color Mode: ", ToString(color_mode));
     output(os, "Fitness Function: ", ToString(fitness_mode));
-    os << "---------------------------------------\n";
+    os << "---------------------------------------\n\n\n";
+}
+
+void SettingBuilder::print_results(std::ostream& os, const RealChromosome& best, fitness::MSE* mse_f, fitness::PSNR* psnr_f, fitness::SSIM* ssim_f) {
+    os << std::left << std::setw(40) << "Best Fitness value = " << best.fitness << '\n';
+    os << std::left << std::setw(40) << "MSE Fitness value = " << mse_f->eval(best) << '\n';
+    os << std::left << std::setw(40) << "PSNR Fitness value = " << psnr_f->eval(best) << '\n';
+    os << std::left << std::setw(40) << "SSIM Fitness value = " << ssim_f->eval(best) << '\n';
+    os << std::left << std::setw(40) << "PSNR value = " << psnr_f->CalPSNR(best) << '\n';
+    os << std::left << std::setw(40) << "SSIM value = " << ssim_f->CalSSIM(best) << '\n';
+    os << "---------------------------------------\n\n";
 }

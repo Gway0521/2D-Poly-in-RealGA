@@ -41,6 +41,9 @@ public:
 
     // 輸出設定
     static void print_settings(std::ostream& os, const ParsedSettings& parsed_settings);
+
+    // 輸出結果
+    static void print_results(std::ostream& os, const RealChromosome& best, fitness::MSE* mse_f, fitness::PSNR* psnr_f, fitness::SSIM* ssim_f);
 };
 
 #endif

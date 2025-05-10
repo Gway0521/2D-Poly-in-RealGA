@@ -13,6 +13,7 @@ enum class ColorFillMode {
     kMean = 1,              // キА计
     kQuantizedMean,         // キА计秖て
     kMajority,              // 渤计
+    kQuantizedMajority,     // 渤计秖て
     kBarycentric            // 絬┦础
 };
 std::string ToString(ColorFillMode mode);
@@ -43,6 +44,16 @@ namespace color
     class MajorityFill : public ColorFill {
     public:
         MajorityFill() {}
+        std::unique_ptr<ColorFill> clone() const;
+        cv::Mat Draw(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+        cv::Mat Draw(int height, int width, const std::vector<cv::Vec3b>& colors, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+        std::vector<cv::Vec3b> EncodeColor(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
+    };
+
+    // 渤计秖て
+    class QuantizedMajorityFill : public ColorFill {
+    public:
+        QuantizedMajorityFill() {}
         std::unique_ptr<ColorFill> clone() const;
         cv::Mat Draw(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;
         cv::Mat Draw(int height, int width, const std::vector<cv::Vec3b>& colors, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const;

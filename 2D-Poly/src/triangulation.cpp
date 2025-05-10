@@ -51,6 +51,29 @@ namespace triangulation
     TriangulationImageBuilder::TriangulationImageBuilder(const cv::Mat& original_image, std::unique_ptr<color::ColorFill> color_fill):
         original_image_(original_image), color_fill_(std::move(color_fill)), width_(original_image.cols), height_(original_image.rows) {}
 
+    void TriangulationImageBuilder::RunEdgeDetection(float top_p) {
+        DrawEdgeImage();
+
+        std::vector<std::pair<uchar, cv::Point>> edge_points;
+        for (int y = 0; y < edge_image_.rows; ++y) {
+            const uchar* row = edge_image_.ptr<uchar>(y);
+            for (int x = 0; x < edge_image_.cols; ++x) {
+                if (row[x] > 0)
+                    edge_points.emplace_back(row[x], cv::Point(x, y));
+            }
+        }
+
+        std::sort(edge_points.begin(), edge_points.end(), [](const auto& a, const auto& b) {
+            return a.first > b.first;
+            });
+
+        size_t keep = static_cast<size_t>(edge_points.size() * top_p);
+        gene_to_point_.clear();
+        gene_to_point_.reserve(keep);
+        for (size_t i = 0; i < keep; ++i)
+            gene_to_point_.push_back(edge_points[i].second);
+    }
+
     // 使用 Bowyer–Watson 演算法構造 Delaunay 三角剖分
     // 傳入的 points 陣列會暫時加入超大三角形的頂點，供演算法使用
     // 為避免在最後輸出結果時混淆，我們約定原始點數為 original_n，超大三角形的頂點索引皆大於等於 original_n
@@ -181,6 +204,33 @@ namespace triangulation
                          triangles_.end());
 
         points_.erase(points_.end() - 3, points_.end());
+    }
+
+    void TriangulationImageBuilder::DrawEdgeImage()
+    {
+        std::vector<cv::Mat> channels;
+        cv::split(original_image_, channels);
+
+        cv::Mat gradX, gradY, gradMag, maxGrad = cv::Mat::zeros(original_image_.size(), CV_32F);
+
+        for (int i = 0; i < 3; ++i) {
+            cv::Sobel(channels[i], gradX, CV_32F, 1, 0, 3);
+            cv::Sobel(channels[i], gradY, CV_32F, 0, 1, 3);
+            cv::magnitude(gradX, gradY, gradMag);
+            cv::max(maxGrad, gradMag, maxGrad);
+        }
+
+        // Normalize to [0, 1]
+        cv::Mat gradNormalized;
+        cv::normalize(maxGrad, gradNormalized, 0.0, 1.0, cv::NORM_MINMAX);
+
+        // Apply gamma correction to boost dark areas
+        const float gamma = 0.6f;
+        cv::Mat gradGamma;
+        cv::pow(gradNormalized, gamma, gradGamma);
+
+        gradGamma *= 255.0f;
+        gradGamma.convertTo(edge_image_, CV_8U);
     }
 
     void TriangulationImageBuilder::DrawLineImage()

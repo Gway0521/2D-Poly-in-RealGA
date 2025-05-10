@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
         ga.evolve();
 
         RealChromosome best = ga.getBestChromosome();
-        builder.RunDelaunay(fitness::Chromosome2Points(best));
+        builder.RunDelaunay(fitness::Chromosome2Points(best, builder.gene_to_point()));
         builder.DrawLineImage();
         builder.DrawColoredImage();
         if (i % save_interval == 0) {
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     RealChromosome best = ga.getBestChromosome();
 
     // encode, decode, and print results
-    builder.RunDelaunay(fitness::Chromosome2Points(best));
+    builder.RunDelaunay(fitness::Chromosome2Points(best, builder.gene_to_point()));
     builder.DrawLineImage();
     builder.DrawColoredImage();
     builder.Encode(filename + "compressed_images/" "best_" + to_string(best.fitness) + ".gaimg");

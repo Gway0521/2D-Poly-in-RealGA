@@ -19,26 +19,24 @@ std::string ToString(FitnessMode mode) {
 
 namespace fitness
 {
-    std::vector<cv::Point> Chromosome2Points(const RealChromosome& g) {
-        std::vector<cv::Point> points(g.gene.size() / 2);
+    std::vector<cv::Point> Chromosome2Points(const RealChromosome& g, const vector<cv::Point>& gene_to_point) {
+        std::vector<cv::Point> points(g.gene.size());
 
-        for (int i = 0; i < g.gene.size(); i += 2) {
-            points[i / 2].x = floor(g.gene[i]);
-            points[i / 2].y = floor(g.gene[i + 1]);
-        }
+        for (int i = 0; i < g.gene.size(); ++i)
+            points[i] = gene_to_point[static_cast<int>(g.gene[i])];
 
         return points;
     }
 
-    MSE::MSE(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : builder_(triangulation::TriangulationImageBuilder(original_image, move(color_fill))) {}
+    MSE::MSE(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : builder_(triangulation::TriangulationImageBuilder(original_image, move(color_fill))) { builder_.RunEdgeDetection(0.9); }
     PSNR::PSNR(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : mse_fitness_function_(MSE(original_image, move(color_fill))) {}
-    SSIM::SSIM(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : builder_(triangulation::TriangulationImageBuilder(original_image, move(color_fill))) {}
+    SSIM::SSIM(const cv::Mat& original_image, unique_ptr<color::ColorFill> color_fill) : builder_(triangulation::TriangulationImageBuilder(original_image, move(color_fill))) { builder_.RunEdgeDetection(0.9); }
 
     // MSE
     float MSE::eval(const RealChromosome& g) {
 
         // Draw Delaunay Triangulation
-        std::vector<cv::Point> points = Chromosome2Points(g);
+        std::vector<cv::Point> points = Chromosome2Points(g, builder_.gene_to_point());
         builder_.RunDelaunay(points);
         builder_.DrawColoredImage();
 
@@ -86,7 +84,7 @@ namespace fitness
     float SSIM::CalSSIM(const RealChromosome& g) {
 
         // Draw Delaunay Triangulation
-        std::vector<cv::Point> points = Chromosome2Points(g);
+        std::vector<cv::Point> points = Chromosome2Points(g, builder_.gene_to_point());
         builder_.RunDelaunay(points);
         builder_.DrawColoredImage();
 

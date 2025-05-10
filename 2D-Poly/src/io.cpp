@@ -66,9 +66,12 @@ SettingBuilder::ParsedSettings SettingBuilder::input(int argc, char* argv[]) {
     if (flag) std::exit(EXIT_FAILURE);
 
     // basic options
-    if (args.count("-numNodes") != 0) parsed_settings.options.setChromosomeSize(std::stoi(args["-numNodes"]) * 2);
+    if (args.count("-numNodes") != 0) parsed_settings.options.setChromosomeSize(std::stoi(args["-numNodes"]));
+    else parsed_settings.options.setChromosomeSize(80);
     if (args.count("-nInitial") != 0) parsed_settings.options.setPopulationSize(std::stoi(args["-nInitial"]));
+    else parsed_settings.options.setPopulationSize(100);
     if (args.count("-gen") != 0) parsed_settings.options.setGeneration(std::stoi(args["-gen"]));
+    else parsed_settings.options.setGeneration(100);
 
     // image
     cv::Mat original_image = cv::imread(args["-imagePath"], cv::IMREAD_COLOR);
@@ -77,37 +80,34 @@ SettingBuilder::ParsedSettings SettingBuilder::input(int argc, char* argv[]) {
         std::exit(EXIT_FAILURE);
     }
 
-    // LB and UB
-    size_t ell = parsed_settings.options.chromosomeSize;
-    std::vector<float> LB(ell);
-    std::vector<float> UB(ell);
-    std::fill(LB.begin(), LB.end(), 0.0);
-    for (int i = 0; i < ell; i += 2) {
-        UB[i] = static_cast<float>(original_image.cols - 1);
-        UB[i + 1] = static_cast<float>(original_image.rows - 1);
-    }
-    parsed_settings.options.setBounds(LB, UB);
-
     // selection
     if (args.count("-selectionType") != 0) parsed_settings.options.setSelectionType(args["-selectionType"]);
+    else parsed_settings.options.setSelectionType("tournament");
     if (args.count("-tournamentSize") != 0) parsed_settings.options.setSelectionTournamentSize(std::stoi(args["-tournamentSize"]));
+    else parsed_settings.options.setSelectionTournamentSize(2);
     if (args.count("-tournamentProb") != 0) parsed_settings.options.setSelectionTournamentProbability(std::stof(args["-tournamentProb"]));
+    else parsed_settings.options.setSelectionTournamentProbability(1);
 
     // crossover
     if (args.count("-crossoverType") != 0) parsed_settings.options.setCrossoverType(args["-crossoverType"]);
+    else parsed_settings.options.setCrossoverType("BLX1p");
     if (args.count("-BLXAlpha") != 0) parsed_settings.options.setBLX_alpha(std::stof(args["-BLXAlpha"]));
+    else parsed_settings.options.setBLX_alpha(0.02);
 
     // mutation
     if (args.count("-mutationType") != 0) parsed_settings.options.setMutationType(args["-mutationType"]);
+    else parsed_settings.options.setMutationType("uniform");
     if (args.count("-mutationRate") != 0) parsed_settings.options.setMutationRate(std::stof(args["-mutationRate"]));
+    else parsed_settings.options.setMutationRate(0.0125);
     if (args.count("-mutationUniformPerc") != 0) parsed_settings.options.setUniformMutationRate(std::stof(args["-mutationUniformPerc"]));
+    else parsed_settings.options.setUniformMutationRate(0.25);
     if (args.count("-mutateDuplicatedFitness") != 0)
         if (args["-mutateDuplicatedFitness"] == "false" || args["-mutateDuplicatedFitness"] == "False" || args["-mutateDuplicatedFitness"] == "0")
             parsed_settings.options.setMutateDuplicatedFitness(false);
         else
             parsed_settings.options.setMutateDuplicatedFitness(true);
 
-    // color mode (default 2), fitness function (default PSNR) and builder
+    // color mode (default: Quantized Mean (mode 2)), fitness function (default PSNR) and builder
     parsed_settings.color_mode = ColorFillMode::kQuantizedMean;
     std::unique_ptr<color::ColorFill> color_fill;
 
@@ -119,6 +119,8 @@ SettingBuilder::ParsedSettings SettingBuilder::input(int argc, char* argv[]) {
         color_fill = std::make_unique<color::QuantizedMeanFill>();
     else if (parsed_settings.color_mode == ColorFillMode::kMajority)
         color_fill = std::make_unique<color::MajorityFill>();
+    else if (parsed_settings.color_mode == ColorFillMode::kQuantizedMajority)
+        color_fill = std::make_unique<color::QuantizedMajorityFill>();
     else
         color_fill = std::make_unique<color::BarycentricFill>();
 
@@ -137,11 +139,21 @@ SettingBuilder::ParsedSettings SettingBuilder::input(int argc, char* argv[]) {
         }
     }
     else {
-        parsed_settings.fitness_mode = FitnessMode::kPSNR;
-        parsed_settings.fitness_function = std::make_unique<fitness::PSNR>(original_image, color_fill->clone());
+        parsed_settings.fitness_mode = FitnessMode::kMSE;
+        parsed_settings.fitness_function = std::make_unique<fitness::MSE>(original_image, color_fill->clone());
     }
         
     parsed_settings.builder = triangulation::TriangulationImageBuilder(original_image, move(color_fill));
+    parsed_settings.builder.RunEdgeDetection(0.9);
+
+    // LB and UB
+    size_t ell = parsed_settings.options.chromosomeSize;
+    std::vector<float> LB(ell);
+    std::vector<float> UB(ell);
+    std::fill(LB.begin(), LB.end(), 0.0);
+    for (int i = 0; i < ell; ++i)
+        UB[i] = static_cast<float>(parsed_settings.builder.gene_to_point().size() - 1);
+    parsed_settings.options.setBounds(LB, UB);
 
     return parsed_settings;
 }
@@ -168,7 +180,7 @@ void SettingBuilder::print_settings(std::ostream& os, const ParsedSettings& pars
     os << "--------------- Setting ---------------\n";
     output(os, "Population Size(nInitial): ", static_cast<unsigned long long>(options.populationSize));
     output(os, "Chromosome Size(ell): ", static_cast<unsigned long long>(options.chromosomeSize));
-    output(os, "Number of Nodes: ", static_cast<unsigned long long>(options.chromosomeSize / 2));
+    output(os, "Number of Nodes: ", static_cast<unsigned long long>(options.chromosomeSize));
     output(os, "Number of Generations: ", static_cast<unsigned long long>(options.gen));
     output(os, "Image Path: ", "'" + image_path + "'");
     output(os, "Seed: ", options.seed);

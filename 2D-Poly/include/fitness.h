@@ -22,7 +22,7 @@ std::string ToString(FitnessMode mode);
 namespace fitness
 {
 
-    std::vector<cv::Point> Chromosome2Points(const RealChromosome& g);
+    std::vector<cv::Point> Chromosome2Points(const RealChromosome& g, const vector<cv::Point>& gene_to_point);
 
     // MSE
     class MSE : public FitnessFunction {

@@ -15,7 +15,7 @@ int main()
 {
     // 檔案路徑
     const std::string input_path = "../../dataset/03.txt";
-    const std::string image_path = "../../dataset/01.jpg";
+    const std::string image_path = "../../dataset/output.bmp";
 
     std::ifstream input_file(input_path);
     if (!input_file)
@@ -83,6 +83,11 @@ int main()
     std::cout << "MSE Fitness: " << mse->eval(chromosome) << std::endl;
     std::cout << "PSNR Fitness: " << psnr->eval(chromosome) << std::endl;
     std::cout << "SSIM Fitness: " << ssim->eval(chromosome) << std::endl;
+
+    // 邊緣圖
+    triangulation_image_builder.DrawEdgeImage();
+    cv::imshow("EdgeImage", triangulation_image_builder.edge_image());
+    cv::waitKey(0);
 
     delete mse;
     delete psnr;

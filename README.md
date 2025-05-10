@@ -74,5 +74,5 @@
   `-mutationRate <float>`：mutation rate（default：0.0125）\
   `-mutationUniformPerc <float>`：mutation 的震盪幅度係數（default：0.25）\
   `-mutateDuplicatedFitness <bool>`：出現重複 fitness 的 chromosome 需不需要再 mutate 一遍（default：true）\
-  `-colorMode <int>`：color mode（default：2 (Quantized Mean)）\
-  `-fitnessFunction <string>`：fitness function（default：PSNR）
+  `-colorMode <int>`：color mode（default：4 (Quantized Majority)）\
+  `-fitnessFunction <string>`：fitness function（default：MSE）

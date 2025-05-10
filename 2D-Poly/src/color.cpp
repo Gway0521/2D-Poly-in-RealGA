@@ -27,6 +27,9 @@ namespace color
     std::unique_ptr<ColorFill> MajorityFill::clone() const {
         return std::make_unique<MajorityFill>(*this);
     }
+    std::unique_ptr<ColorFill> QuantizedMajorityFill::clone() const {
+        return std::make_unique<QuantizedMajorityFill>(*this);
+    }
     std::unique_ptr<ColorFill> MeanFill::clone() const {
         return std::make_unique<MeanFill>(*this);
     }
@@ -233,6 +236,56 @@ namespace color
     }
 
     cv::Mat MajorityFill::Draw(int height, int width, const std::vector<cv::Vec3b>& colors, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const {
+
+        cv::Mat colored_image(height, width, CV_8UC3, cv::Scalar(255, 255, 255));
+
+        for (size_t i = 0; i < triangles.size(); ++i) {
+            const auto& tri = triangles[i];
+            const cv::Vec3b& fill_color = colors[i];
+            const cv::Scalar fill(fill_color[0], fill_color[1], fill_color[2]);
+
+            cv::Point pts[3] = {
+                points[tri.a],
+                points[tri.b],
+                points[tri.c]
+            };
+            cv::fillConvexPoly(colored_image, pts, 3, fill, cv::LINE_AA);
+        }
+
+        return colored_image;
+    }
+
+    std::vector<cv::Vec3b> QuantizedMajorityFill::EncodeColor(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const {
+        // 先照 Majority 算平均，再量化每個 channel
+        color::MajorityFill majorityfill;
+        std::vector<cv::Vec3b> encoded_colors = majorityfill.EncodeColor(orig_img, triangles, points);
+        // 量化一次：每通道 >>3 <<3
+        for (int i = 0; i < encoded_colors.size(); ++i) {
+            encoded_colors[i][0] = (encoded_colors[i][0] >> 3) << 3;
+            encoded_colors[i][1] = (encoded_colors[i][1] >> 3) << 3;
+            encoded_colors[i][2] = (encoded_colors[i][2] >> 3) << 3;
+        }
+        return encoded_colors;
+    }
+
+    cv::Mat QuantizedMajorityFill::Draw(const cv::Mat& orig_img, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const {
+
+        // 先照 Majority 算平均，再量化每個 channel
+        color::MajorityFill majorityfill;
+        cv::Mat majorityImg = majorityfill.Draw(orig_img, triangles, points);
+        // 量化一次：每通道 >>3 <<3
+        for (int y = 0; y < majorityImg.rows; ++y) {
+            cv::Vec3b* row = majorityImg.ptr<cv::Vec3b>(y);
+            for (int x = 0; x < majorityImg.cols; ++x) {
+                row[x][0] = (row[x][0] >> 3) << 3;
+                row[x][1] = (row[x][1] >> 3) << 3;
+                row[x][2] = (row[x][2] >> 3) << 3;
+            }
+        }
+        return majorityImg;
+    }
+
+    cv::Mat QuantizedMajorityFill::Draw(int height, int width, const std::vector<cv::Vec3b>& colors, const std::vector<Triangle>& triangles, const std::vector<cv::Point>& points) const {
 
         cv::Mat colored_image(height, width, CV_8UC3, cv::Scalar(255, 255, 255));
 

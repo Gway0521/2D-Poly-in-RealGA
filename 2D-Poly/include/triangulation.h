@@ -32,9 +32,13 @@ namespace triangulation
         TriangulationImageBuilder(std::unique_ptr<color::ColorFill> color_fill); // 在 decode 時使用
         TriangulationImageBuilder(const cv::Mat& original_image, std::unique_ptr<color::ColorFill> color_fill); // 在 encode 時使用
 
+        // 跑一遍 Edge Detection，把映射結果存在 gene_to_point_，只保留 top_p 比例的 edge point
+        void RunEdgeDetection(float top_p);
         // 跑一遍 Delaunay Triangulation，存在 triangles_
         void RunDelaunay(const std::vector<cv::Point> &points);
 
+        // 畫出邊緣圖，存在 edge_image_
+        void DrawEdgeImage();
         // 畫出線圖，存在 line_image_
         void DrawLineImage();
         // 畫出上色圖，存在 colored_image_
@@ -54,8 +58,10 @@ namespace triangulation
         int width() const { return width_; }
         int height() const { return height_; }
         std::unique_ptr<color::ColorFill> clone_color_fill() const { return color_fill_->clone(); }
+        const std::vector<cv::Point>& gene_to_point() const { return gene_to_point_; }
         const std::vector<cv::Point> &points() const { return points_; }
         const std::vector<Triangle> &triangles() const { return triangles_; }
+        const cv::Mat &edge_image() const { CV_Assert(!edge_image_.empty()); return edge_image_; }
         const cv::Mat &line_image() const { CV_Assert(!line_image_.empty()); return line_image_; }
         const cv::Mat &colored_image() const { CV_Assert(!colored_image_.empty()); return colored_image_; }
         const cv::Mat &original_image() const { CV_Assert(!original_image_.empty()); return original_image_; }
@@ -71,9 +77,11 @@ namespace triangulation
 
         std::unique_ptr<color::ColorFill> color_fill_;
 
+        std::vector<cv::Point> gene_to_point_;
         std::vector<cv::Point> points_;
         std::vector<Triangle> triangles_;
 
+        cv::Mat edge_image_;
         cv::Mat line_image_;
         cv::Mat colored_image_;
         cv::Mat original_image_;
